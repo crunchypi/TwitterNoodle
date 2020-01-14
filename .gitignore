@@ -3,3 +3,6 @@
 credentials.py
 # not necessary to upload
 playground
+*__pycache__
+.vscode
+*.DS_Store
