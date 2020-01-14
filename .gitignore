@@ -3,3 +3,5 @@
 credentials.py
 # not necessary to upload
 playground
+.vscode
+__pycache__
