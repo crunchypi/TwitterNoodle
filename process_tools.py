@@ -25,8 +25,13 @@ class ProcessSimilarity():
         self.cond_print("Done loading model.")
 
     # // This creates a list of simularity net results. 
-    # //    Format: [recursion_lvl, query, word, confidence]
-    def get_similarity_net(self, query:list, current_recursion:int = 0, max_recursion:int = 2):
+    # //    Format uncompressed: [recursion_lvl, query, word, confidence]
+    # //    Format compressed: [word, confidence]
+    def get_similarity_net(self, 
+                           query:list, 
+                           current_recursion:int = 0, 
+                           max_recursion:int = 2,
+                           compress = True):
         if self.w2v_model is None:
             self.cond_print("Word 2 Vector model not set, aborting.")
             return
@@ -51,38 +56,83 @@ class ProcessSimilarity():
             return current_degree
 
         self.cond_print(f"Ended similarity fetch for: {query}.")
-        return calculate(query, current_recursion, max_recursion)
+        result = calculate(query, current_recursion, max_recursion)
+        if compress: result = self.compress_similarity_net(result)
+        return result
+
+    def compress_similarity_net(self, lst):
+        lst = lst.copy()
+        new_lst = []
+        for i in range(len(lst)):
+            current_item = lst.pop()
+            current_word = current_item[2]
+            previous_words = [ item[0] for item in new_lst]
+            
+            if current_word in previous_words: continue 
+            
+            current_score = current_item[3] / (current_item[0] + 1)
+            for other_item in lst:
+                other_word = other_item[2]
+                if current_word == other_word:
+                    # // + 1 because degrees start at 0. Might wanna change that.. @@
+                    current_score += other_item[3] / (other_item[0] + 1)
+            new_lst.append([current_word, current_score])
+        return new_lst
 
 
-    def get_score(self, new:str, existing:str, degrees:int = 2): # // Arbitrary scoring system...
-        # // Note: add degree filter range?
-        total_score = 0
-        
+
+    def get_score_from_str(self, new:str, existing:str, degrees:int = 2):
+        # // Note: add degree filter range? @@
         result_new = self.get_similarity_net(new.split(), max_recursion = degrees)
         result_existing = self.get_similarity_net(existing.split(), max_recursion = degrees)
-        
-        for item_new in result_new:
-            for item_existing in result_existing:
-                word_a = item_new[2]
-                word_b = item_existing[2]
-                
-                if word_a in word_b or word_b in word_a or word_a == word_b:
-                    # // + 1 because degrees start at 0. Might wanna change that..
-                    total_score += item_existing[3] / (item_existing[0] + 1)
+        return self.get_score_compressed_siminet(new=result_new, other=result_existing)
+
+    def get_score_compressed_siminet(self, new:list, other:list):
+        total_score = 0
+        for item_new in new:
+            for item_other in other:
+                word_a = item_new[0]
+                word_b = item_other[0]
+                # // Could replace with +- 1 letter similarity margin?
+                if word_a == word_b:
+                    # // Rudimentary scoring system.
+                    total_score += (item_new[1] + item_other[1])
                     
         return total_score
 
-    def get_top_simi_index(self, new_object:DataObj, old_objects:list, degrees:int = 2):
-        # // Finds the best similarity match between an object and a list of objects.
+    def get_top_simi_index(self, 
+                           new_object:DataObj, 
+                           other_objects:list, 
+                           degrees:int = 2,
+                           mode:str = "siminet_compressed"):
+        # // Finds the best similarity match between an object and a list of objects,
+        # // based on two modes:
+        # //    text = will access DataObj.text
+        # //    siminet = will acced DataObj.siminet_compressed (precomputed siminet)
+        valid_modes = ["text", "siminet_compressed"]
+        if mode not in valid_modes: 
+            self.cond_print("ProcessSimilarity.get_top_simi_index(): "+
+                             f"selected mode '{mode}' is invalid. Aborting.")
+            return
+
         score_highest = 0 
-        index = 0 ## What if nothing matches? @@@
-        for i, obj in enumerate(old_objects):
-            score_current:int = self.get_score(new=new_object.text, existing=obj.text, degrees=degrees)
-            self.cond_print(f"{new_object.text} + {obj.text} = {score_current}")
+        index = None
+        for i, other in enumerate(other_objects):
+            score_current = 0
+            if mode == "text":
+                # // new_obj data could probably be stored before loop... @@
+                score_current = self.get_score_from_str(new=new_object.text, 
+                                                        existing=other.text, 
+                                                        degrees=degrees)
+            else:
+                score_current = self.get_score_compressed_siminet(new=new_object.siminet_compressed,
+                                                                  other=other.siminet_compressed)
+            self.cond_print(f"{new_object.text} + {other.text} = {score_current}")
             if score_current > score_highest:
                 score_highest = score_current
                 index = i
         return index
+
 
 def test():
     ps = ProcessSimilarity(True)
