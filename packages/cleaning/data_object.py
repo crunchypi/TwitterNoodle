@@ -17,13 +17,12 @@ class DataObj():
         self.alphatags = []
         self.valid_sentiment_range = False
 
+        self.siminet_compressed = [] # // compressed similarity net as in ProcessSimilarity class
+
         # // AA: Twitter obj entities might be worth looking into
 
         self.possible_states = None # // AA: not implemented
         self.state = "Empty"
-
-
-
 
 
 def get_dataobj_converted(tweet):
@@ -34,3 +33,5 @@ def get_dataobj_converted(tweet):
     new_obj.coordinates = tweet.coordinates
     new_obj.place = tweet.place
     return new_obj
+
+
