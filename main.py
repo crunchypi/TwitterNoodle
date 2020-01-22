@@ -51,10 +51,7 @@ switch_cleaner_loop = True # // AA: hack
 def cleaner_loop():
     while switch_cleaner_loop:
         if len(queue_stream) > 0:
-            try:
-                clean_process()
-            except:
-                print("cleaner_loop issue in main.py")
+            clean_process()
 
 
 
