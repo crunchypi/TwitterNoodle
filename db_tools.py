@@ -9,7 +9,7 @@ class GDBCom():
     graphDB_Driver = None
 
 
-    def __init__(self,verbosity:bool=False):
+    def __init__(self, verbosity:bool = False):
         self.verbosity = verbosity
 
     def setup(self):
@@ -39,8 +39,9 @@ class GDBCom():
                 self.print_progress(f"executed: \n {cmd}")
             else:
                 for cmd in self.cache_commands:
+                    self.print_progress(f"executing: \n {cmd}")
                     GDBS.run(cmd)
-                    self.print_progress(f"executed: \n {cmd}")
+                    self.print_progress("Cache execute completed.")
                 self.cache_commands.clear()
             GDBS.close()
 
@@ -54,7 +55,7 @@ class GDBCom():
 
 
     def create_tweet_node(self, alias:str, obj:DataObj, level:int, mode="queue"):
-        siminet = data_object_tools.siminet_compressed_to_txt(obj.siminet_compressed)
+        siminet = data_object_tools.siminet_compressed_to_txt(obj.siminet_compressed) # // @@ Should not be here 
         # // NOTE: setting siminet might have an issue: using single quotes
         # //        will lead to issues because of ' appears in the text due
         # //        to (i believe) the way a siminet is converted to text.
@@ -62,7 +63,7 @@ class GDBCom():
         command = f'''
             CREATE (alias{alias}:level_{level})
             SET alias{alias}.unique_id = '{obj.unique_id}'
-            SET alias{alias}.name = '{obj.name}'
+            SET alias{alias}.name = "{obj.name}"
             SET alias{alias}.text = '{obj.text}'
             SET alias{alias}.siminet_compressed = "{siminet}"
         '''
@@ -166,7 +167,6 @@ class GDBCom():
         cmd = f"""
             MATCH (lastObj)
             WHERE lastObj.unique_id = '{last_obj_on_ring.unique_id}'
-            //MATCH (lastObj)-[:UP]->(first)-[:TICK*]->(others)
             MATCH (lastObj)<-[:TICK*]-(others)
             RETURN others
         """
@@ -236,7 +236,7 @@ class GDBCom():
             CREATE (aliasnode_last)-[:TICK]->(aliasnode_new)
             CREATE (aliasnode_new)-[:UP]->(firstInRing)
             DETACH DELETE oldUpTie//, oldSelfTick
-        """
+        """ # // TODO: The '//' is above line, why is it there, typo?
         self.cache_commands.append(cmd)
 
     def get_last_node_on_ring(self, obj: DataObj):
