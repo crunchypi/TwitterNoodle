@@ -131,7 +131,6 @@ class GDBCom():
 
 
 
-
     def create_initial_ring(self, dataobjects: list) -> None:
         # // Note about connecting nodes:
         #   - Could be done by creating nodes here
@@ -148,32 +147,36 @@ class GDBCom():
             cmd += "\n"
 
         # // connect last to first
-        cmd += f"\tCREATE (alias{0})-[con{len(dataobjects)}:TIE]->(alias{id_last})"
+        cmd += f"\tCREATE (alias{0})<-[con{len(dataobjects)}:UP]-(alias{id_last})"
 
         self.cache_commands.append(cmd)
 
     def get_ring_root(self):
-        # // @@ Can be refactored by using get_ring_below
+        # // Getting the first ring
         cmd = """
-            MATCH (strt:level_0)-[tie_r:TIE]->(last:level_0)
-            MATCH (strt)-[tick_r:TICK*]-(connected)
-            RETURN strt, connected
+            MATCH (strt:level_0)-[:TICK*]->(other:level_0)
+            RETURN strt,other
         """
         result = self.execute_return(cmd)
         return self.convert_n4jdata_to_dataobjects(result)
 
     def get_ring_from_obj(self, obj):
-        # // wraps around, so if ring size is 3 and obj index is 1, 
-        # // then the result is 1,2,0
+        # // Gets ordered ring from any obj on that ring.
+        last_obj_on_ring = self.get_last_node_on_ring(obj)[0]
         cmd = f"""
-            MATCH (strt)
-            WHERE strt.unique_id = '{obj.unique_id}'
-            MATCH (strt)-[tick_r:TICK*]-(connected)
-            RETURN strt, connected
+            MATCH (lastObj)
+            WHERE lastObj.unique_id = '{last_obj_on_ring.unique_id}'
+            //MATCH (lastObj)-[:UP]->(first)-[:TICK*]->(others)
+            MATCH (lastObj)<-[:TICK*]-(others)
+            RETURN others
         """
-        # // return list of dataobjects
         neo4jdata = self.execute_return(cmd)
-        return self.convert_n4jdata_to_dataobjects(neo4jdata)
+        ring = self.convert_n4jdata_to_dataobjects(neo4jdata)
+        ring.reverse()
+        # // add last obj if it's not existing (must use ids)
+        ids = [obj.unique_id for obj in ring]
+        if last_obj_on_ring.unique_id not in ids: ring.append(last_obj_on_ring)
+        return ring
  
     # // Not implemented
     def get_ring_below_node(self, connector_id):
@@ -206,44 +209,48 @@ class GDBCom():
         pass
 
     def create_node_endof_ring(self, obj_ring:list, obj_new:DataObj):
-        # // Get last object in ring
         if not obj_ring:
             self.print_progress("tried to create obj at the end of a ring " +
                                 "but ring is empty. Aborting")
             return
-        # // Identify last object, index doesn't matter because last node is autodetected
-        # // from the ring it's on
-        obj_last_in_ring = self.get_last_node_on_ring(obj_ring[0])[0]
+        # // Index doesn't matter because last node is autodetected
+        anyobj_in_ring = obj_ring[0]
+        obj_last_in_ring = self.get_last_node_on_ring(anyobj_in_ring)[0]
         
         cmd = f"""
             MATCH (aliasnode_last)
             WHERE aliasnode_last.unique_id = '{obj_last_in_ring.unique_id}'
-            MATCH (aliasnode_last)<-[oldTie:TIE]-(firstInRing)
+            MATCH (aliasnode_last)-[oldUpTie:UP]->(firstInRing)
+            //MATCH (aliasnode_last)-[oldSelfTick:TICK]->(aliasnode_last)
         """
+        if len(obj_ring) == 1: # // remove self tick from first DOWN insert
+            cmd += """
+                MATCH (aliasnode_last)-[oldSelfTick:TICK]->(aliasnode_last)
+                DETACH DELETE oldSelfTick
+            """
         # // Queue creation of new node
         target_level = self.get_level_from_node(obj_last_in_ring)
         cmd += self.create_tweet_node(alias="node_new", obj=obj_new, level=target_level, mode="return")
         # // Redo connections
         cmd += """\n
-            CREATE (aliasnode_last)-[con:TICK]->(aliasnode_new)
-            CREATE (aliasnode_new)<-[:TIE]-(firstInRing)
-            DETACH DELETE oldTie
+            CREATE (aliasnode_last)-[:TICK]->(aliasnode_new)
+            CREATE (aliasnode_new)-[:UP]->(firstInRing)
+            DETACH DELETE oldUpTie//, oldSelfTick
         """
         self.cache_commands.append(cmd)
 
     def get_last_node_on_ring(self, obj: DataObj):
-        # // Hacky solution - returns last node if last node is not specified node
+        # TODO: accept obj arg as list?
         cmd = f""" 
             MATCH (specifiedNode)
             WHERE specifiedNode.unique_id = '{obj.unique_id}'
-            //MATCH (specifiedNode)-[:TICK*]-(pathNodes)-[:TIE]-(unknown)-[:TICK*]->(last)
-            MATCH (specifiedNode)-[:TICK*]-(others)-[:TIE]-(some)
-            MATCH (some)-[:TIE]->(target)
-            RETURN target
+            MATCH (specifiedNode)-[:TICK*]->(last)
+            WHERE (last)-[:UP]->()
+            RETURN last
         """
         neo4jdata = self.execute_return(cmd)
         objects = self.convert_n4jdata_to_dataobjects(neo4jdata)
-        if not objects: # // Hacky.. @@ beware: check first if it's in db!
+        if not objects: # // If no objects, the obj arg is last.
             objects.append(obj)
         return objects
 
@@ -251,24 +258,18 @@ class GDBCom():
         cmd = f"""
             MATCH (node_above)
             WHERE node_above.unique_id = '{obj_above.unique_id}'
-
         """
         target_level = self.get_level_from_node(obj_above) + 1
-        cmd += self.create_tweet_node(alias="node_below", obj=new_obj, level=target_level, mode="return")                          
+        cmd += self.create_tweet_node(alias="node_below", obj=new_obj, level=target_level, mode="return") 
+        # // Create ties:                         
         cmd += f"""
-            CREATE (node_above)-[_:DOWN]->(aliasnode_below)
-        """
-        # // @@ Create ties?  EXPERIMENTAL: seems to be working.
-        # // Added such that create_node_endof_ring & get_last_node_on_ring would work
-        # // with below-nodes
-        cmd += f"""
-            CREATE (aliasnode_below)-[:TIE]->(aliasnode_below)
-        """
-        cmd += f"""
+            CREATE (node_above)-[:DOWN]->(aliasnode_below)
+            CREATE (aliasnode_below)-[:UP]->(node_above)
             CREATE (aliasnode_below)-[:TICK]->(aliasnode_below)
         """
         self.cache_commands.append(cmd)
 
+    # // TODO remove mode, not really necessary since i'm always using dataobj
     def get_node_below(self, obj, mode="dataobj"):
         cmd = f"""
             MATCH (node_above), (node_below)
@@ -293,22 +294,6 @@ class GDBCom():
 
 
 
-    def assign_new_node(self, new_obj):
-        pass
-        # // probably recursive?
-        
-        # // high_node = Find node with highest score
-        # // node_below = Get node below hight_node.
-        # // Does it exist?
-        # // No:
-        # //    create node_below and return
-        # // Yes: 
-        # //     ring_size = get ring size of node_below
-        # //     is ringsize > size limit?
-        # //     No:
-        # //        Attach new node at the end of current ring
-        # //     Yes:
-        # //        Do recursion with this ring
 
 
 
