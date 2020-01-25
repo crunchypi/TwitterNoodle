@@ -40,22 +40,19 @@ class BasicCleaner():
 
         _data_obj.text = self.clean_links(_data_obj.text)
 
-        # // Filter alphatags
+        # // Filter alphatags.
         filtered_alphatags = self.clean_alphatags(_data_obj.text)
         _data_obj.text = filtered_alphatags[0]
         _data_obj.alphatags = filtered_alphatags[1]
  
-        # // Filter hashtags
+        # // Filter hashtags.
         filtered_hashtags = self.clean_hashtags(_data_obj.text)
         _data_obj.text = filtered_hashtags[0]
         _data_obj.hashtags = filtered_hashtags[1]
 
-        # // Clean a lot of shit
+        # // Additional cleaning.
         _data_obj.text = self.clean_convert_to_lowercase(_data_obj.text)
-        #print(f'type: {type(_data_obj.text)}  {_data_obj.text}')
-        #_data_obj.text = self.tokenise(_data_obj.text)
         _data_obj.text = self.clean_stopwords(_data_obj.text)
-        #_data_obj.text = self.detokenise(_data_obj.text)
         _data_obj.text = self.clean_punctuation(_data_obj.text)
         _data_obj.text = self.remove_duplica_words(_data_obj.text)
         _data_obj.valid_sentiment_range = self.set_sentiment(
@@ -72,7 +69,6 @@ class BasicCleaner():
         non_dup = set(words)
         return " ".join(non_dup)
 
- 
     @staticmethod
     def tokenise(content):
         return word_tokenize(content)
@@ -94,9 +90,6 @@ class BasicCleaner():
 
     @staticmethod
     def clean_punctuation(content:str) -> str:
-        # Removed on 010120.
-        #_data_obj.text = _data_obj.text.translate(str.maketrans('', '', string.punctuation))
-        # Added on 010120 for testing, will revert by 010220 if it's bust.
         new_string = ""
         str_split = content.split()
         for chunk in str_split:
@@ -104,7 +97,7 @@ class BasicCleaner():
             for char in chunk:
                 if char.isalpha():
                     tmp += char
-            new_string += f" {tmp}" # // could check if tmp only contains space
+            new_string += f" {tmp}" # // could check if tmp only contains space.
         return new_string
 
     @staticmethod
