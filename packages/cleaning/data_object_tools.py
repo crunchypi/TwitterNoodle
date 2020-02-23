@@ -18,6 +18,7 @@ def siminet_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
         word = str(row[0])
         confidence = str(row[1])
         txt += f"{word}{col_sep}{confidence}{row_sep}"
+        
     return txt
 
 
@@ -33,5 +34,4 @@ def txt_to_siminet(txt, row_sep:str = "--", col_sep:str = "||"):
             confidence = float(columns[1])
             siminet.append([word, confidence])
                 
-    
     return siminet
