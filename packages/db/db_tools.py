@@ -70,7 +70,7 @@ class GDBCom():
 
 
     def create_tweet_node(self, alias:str, obj:DataObj, level:int, mode="queue"):
-        siminet_formatted = data_object_tools.siminet_compressed_to_txt(obj.siminet_compressed) # // @@ Should not be here 
+        siminet_formatted = data_object_tools.siminet_to_txt(obj.siminet) # // @@ Should not be here 
         # // NOTE: setting siminet might have an issue: using single quotes
         # //        will lead to issues because of ' appears in the text due
         # //        to (i believe) the way a siminet is converted to text.
@@ -80,7 +80,7 @@ class GDBCom():
             SET alias{alias}.unique_id = '{obj.unique_id}'
             SET alias{alias}.name = "{obj.name}"
             SET alias{alias}.text = '{obj.text}'
-            SET alias{alias}.siminet_compressed = "{siminet_formatted}"
+            SET alias{alias}.siminet = "{siminet_formatted}"
         '''
         
         # // Be able to either send cmd to queue or return for further processing.
@@ -117,14 +117,14 @@ class GDBCom():
         unique_id = neo_node["unique_id"]
         name = neo_node["name"]
         text = neo_node["text"]
-        siminet_compressed = neo_node["siminet_compressed"]
-        siminet_compressed = data_object_tools.txt_to_compressed_siminet(siminet_compressed)
+        siminet = neo_node["siminet"]
+        siminet = data_object_tools.txt_to_siminet(siminet)
 
         new_dataobj = DataObj()
         new_dataobj.unique_id = unique_id
         new_dataobj.name = name
         new_dataobj.text = text
-        new_dataobj.siminet_compressed = siminet_compressed
+        new_dataobj.siminet = siminet
         return new_dataobj
 
     def get_dataobjects_from_node_by_pkeys(self, pkeys:list) -> list:
@@ -340,8 +340,8 @@ class GDBCom():
             # // Do swaps.
             for i in range(len(objs_old)):
                 # // Format siminets such that the database can contain them.
-                siminet_formatted = data_object_tools.siminet_compressed_to_txt(
-                                        objs_new[i].siminet_compressed
+                siminet_formatted = data_object_tools.siminet_to_txt(
+                                        objs_new[i].siminet
                                     )
                 self.print_progress( # // Status update
                     f"Que swap: '{objs_new[i].name}' -> node({objs_old[i].name})"
@@ -350,7 +350,7 @@ class GDBCom():
                     SET objOld{i}.unique_id = '{objs_new[i].unique_id}'
                     SET objOld{i}.name = "{objs_new[i].name}"
                     SET objOld{i}.text = '{objs_new[i].text}'
-                    SET objOld{i}.siminet_compressed = "{siminet_formatted}"
+                    SET objOld{i}.siminet = "{siminet_formatted}"
                 """
             # @ Auto-execute; might use this as an option.
             self.cache_commands.append(cmd)
