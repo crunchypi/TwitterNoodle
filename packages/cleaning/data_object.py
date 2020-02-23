@@ -13,4 +13,4 @@ class DataObj():
         self.alphatags = []
         self.valid_sentiment_range = False
 
-        self.siminet_compressed = [] # // compressed similarity net as in ProcessSimilarity class
+        self.siminet = [] # // compressed similarity net as in ProcessSimilarity class

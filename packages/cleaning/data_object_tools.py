@@ -12,7 +12,7 @@ def convert_tweet2dataobj(tweet):
     return new_obj
 
 
-def siminet_compressed_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
+def siminet_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
     txt = ""
     for row in siminet:
         word = str(row[0])
@@ -21,7 +21,7 @@ def siminet_compressed_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
     return txt
 
 
-def txt_to_compressed_siminet(txt, row_sep:str = "--", col_sep:str = "||"):
+def txt_to_siminet(txt, row_sep:str = "--", col_sep:str = "||"):
     siminet = []
     rows = txt.split(row_sep)
     for row in rows:
