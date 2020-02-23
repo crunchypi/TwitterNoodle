@@ -57,7 +57,7 @@ class ProcessSimilarity():
             return
         if max_recursion < 1: raise ValueError("Expected minimum recursion of 1")
         self.cond_print(f"Starting similarity fetch for: {query}.")
-        
+        # @@ TODO: signal no siminet for better performance
         def validate_next(content:str) -> bool:
             " Validate a word before more recursion (performance boost)."
             # // Signal False if there is a non-alpha.
