@@ -4,6 +4,7 @@ from packages.similarity.process_tools import ProcessSimilarity
 from packages.cleaning import data_object_tools # @ deb
 from packages.misc.custom_thread import CustomThread
 
+# // @ add global siminet degree
 
 class DBMana():
 
@@ -98,23 +99,16 @@ class DBMana():
             self.dataobj_queue_overloaded = False
         
 
-    def create_initial_ring(self, dataobjects: list, cached_siminet: bool = True) -> None:
+    def create_initial_ring(self, dataobjects: list) -> None:
         """ Creates the initial/main root ring in the db structure.
             Clears db before doing this.
-
-            cached_siminet=True means that siminets of all objects are created and cached.
-            This drastically improves the speed of the db, but will naturally increase
-            the db size.
         """
         self.gdbcom.delete_all()
-        if cached_siminet:
-            for obj in dataobjects:
-                obj.siminet_compressed = self.simitool.get_similarity_net(obj.text.split())
         self.gdbcom.create_initial_ring(dataobjects)
         self.gdbcom.cache_execute(_single_transaction = False)
 
 
-    def autoinsertion(self, new_node, cached_siminet: bool = True ) -> None:
+    def autoinsertion(self, new_node) -> None:
         """ Inserts new DataObj into db.
             Note: NEEDS AN INITIAL RING.
             Creates a siminet for new_node and compares against the siminet
@@ -122,9 +116,7 @@ class DBMana():
             is inserted into any level of the db structure, as long as appropriate 
             matches are made.
 
-            cached_siminet=True caches all siminets on db nodes, such that every node
-            only needs one siminet creation. This will drastically improve the speed
-            of the db, but will naturally increase the db size.
+            Exceptions: ValueError if no ring root exists in the db structure.
         """
 
         def insert(current_ring:list, current_object) -> None:
@@ -176,11 +168,9 @@ class DBMana():
                         current_object=current_object
                     )
 
-        if cached_siminet:
-            new_node.siminet_compressed = self.simitool.get_similarity_net(new_node.text.split())
         ring_root = self.gdbcom.get_ring_root()
-        if ring_root: # // Make sure that a ring root exists.
-            insert(ring_root, new_node)
+        if not ring_root: raise ValueError("Create ring root before insertion")
+        insert(ring_root, new_node)
 
 
     def re_introduce_descendants_of(self, dataobj) -> None:
@@ -251,9 +241,7 @@ class DBMana():
         ring_old = ordered_root_ring # @ fix naming
         self.cond_print(f"  ORIGINAL: {[ obj.name for obj in ring_old]}")
         # // Attempt sorting by similarity.
-        representative_result = self.simitool.get_representatives(
-            objects=ring_old, cached_siminet=True
-            )
+        representative_result = self.simitool.get_representatives(objects=ring_old)
         self.cond_print(f"  ORDERED: {[obj.name for obj in representative_result[1]]}")
         # // Skip if order in new and old ring is the same.
         if not representative_result[0]: # // Check order change.
@@ -288,25 +276,7 @@ class DBMana():
         """
         
         sort_generator = self.clockwork_traversal(sort=True, continuous=False)
-        # while True:
-        #     # // Handle node queue limits.
-        #     print("inner loop")
-        #     self.check_queue_drop()
-        #     if self.dataobj_queue:
-        #         self.cond_print("event_loop: Started autoinsertion")
-        #         new_node = self.dataobj_queue.pop(0)
-        #         self.autoinsertion(new_node=new_node, cached_siminet=True)
-        #         self.cond_print("event_loop: Ended autoinsertion")
-        #     try:
-        #         self.cond_print("event_loop: Started Sort")
-        #         next(sort_generator)
-        #         self.cond_print("event_loop: Ended Sort")
-        #     except StopIteration:
-        #         self.cond_print("event_loop: async (outer) loop.")
-        #         print("StopIteration")
-        #         break
-        # print("looped event_loop")
-
+   
         while self.event_loop_enabled: 
             self.check_queue_drop()
             # // Insert new
