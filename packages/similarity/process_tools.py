@@ -91,7 +91,6 @@ class ProcessSimilarity():
         return self.compress_similarity_net(result)
 
 
-
     def compress_similarity_net(self, lst:list) -> list:
         """ Takes this format of a standard siminet:
                 [[recursion_lvl, query, match, confidence_score]]
@@ -139,7 +138,7 @@ class ProcessSimilarity():
 
     def get_top_simi_index(self, 
                            new_object:DataObj, 
-                           other_objects:list, 
+                           other_objects:list, # // @ Remove degrees
                            degrees:int = 2) -> int: # // @ Add support for Any (incl None).
         """ Takes a DataObj and [DataObj] and matches simi-nets of all [DataObj] against
             Dataobj to find the best match(similarity). Returns an index to the [Dataobj].
