@@ -308,26 +308,6 @@ class GDBCom():
             RETURN other, connector, startNode(connector) as startRef
         """
         result = self.execute_return(cmd=cmd)
-        # // TEST: show all connectors and such
-        # print(obj.name)
-        # for i, d_dict in enumerate(result):
-        #     print() # // space for visualisation
-        #     for key in d_dict:
-        #         print() # // space for visualisation
-        #         print(f"{i}: {key}")
-        #         if key == "startRef":
-        #             print(d_dict.get(key).id)
-        #         if key == "connector":
-        #             print("-Connector properties-:")
-        #             #print(d_dict.get(key))
-        #             print(d_dict.get(key).id)
-        #             print(d_dict.get(key).type)
-        #         if key == "other":
-        #             print("-node properties-:")
-        #             #print(d_dict.get(key))
-        #             print(d_dict.get(key).id)
-        #             print(d_dict.get(key).get("name"))
-        #             print(d_dict.get(key).get("unique_id"))
         return result
 
     def swap_nodes(self, objs_old:list, objs_new:list) -> None: # // lists of dataobj
