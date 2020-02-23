@@ -2,15 +2,18 @@ from packages.db.db_tools import GDBCom
 from packages.similarity.process_tools import ProcessSimilarity
 
 from packages.cleaning import data_object_tools # @ deb
+from packages.misc.custom_thread import CustomThread
 
 
 class DBMana():
 
 
+
     def __init__(self, 
                  verbosity: bool = False, 
                  ringsize: int = 3,
-                 static_ringsize: bool = False) -> None:
+                 static_ringsize: bool = False,
+                 conservative_swaps: bool = True) -> None:
         """ Setup for this class where:
                 - Verbosity for this class(verbosity_mana(ger)) is set.
                 - Similarity tools are set. 
@@ -21,19 +24,32 @@ class DBMana():
                     property, but will be larger if a new node cannot be associated
                     with any nodes in current/destination ring. This means that no
                     new nodes will get dropped.
+                - conservative_swaps = True means:
+                    Swaps only new representatives and old rep in clockwork sort. 
+                    False swaps all the nodes which have a new order in a rep swap.
+                    
         """
 
         self.verbosity = verbosity
 
         self.ringsize = ringsize
         self.static_ringsize = static_ringsize
+        self.conservative_swaps = True
 
         self.dataobj_queue = []
+        self.dataobj_queue_overloaded = False
+        self.dataobj_queue_max_threshold_soft = 100
+        self.dataobj_queue_max_threshold_hard = 200
+
         self.clockwork_current_node = None
+
+        # // Event-loop is looped and async.
+        self.event_loop_enabled = True
+        self.event_loop_thread = CustomThread(_task=self.event_loop, _is_looped=False)
 
 
     def setup_db_tools(self, verbosity: bool = False) -> None:
-        """ Setting up db tools
+        """ Setting up db tools.
         """
         self.gdbcom = GDBCom(verbosity=verbosity)
         self.gdbcom.setup()
@@ -45,8 +61,7 @@ class DBMana():
             a test occurs can be time consuming).
         """
         self.simitool = ProcessSimilarity(verbosity=verbosity)
-        if load_model:
-            self.simitool.load_model("glove-twitter-25")
+        if load_model: self.simitool.load_model("glove-twitter-25")
 
 
     def cond_print(self, content: str) -> None:
@@ -56,18 +71,32 @@ class DBMana():
 
     def queue_dataobj(self, dataobj) -> None:
         "Simply queue a new data object for processing."
-        pass
+        self.dataobj_queue.append(dataobj)
 
 
     def check_queue_drop(self) -> None:
-        """ Drop data objects form dataobj_queue if the queue is 
-            getting too big.
+        """ Check dataobj_queue status.
+            - If the length is reaching a soft limit, give a warn and 
+              signal overload.
+            - If the length is reaching a hard limit, give a warn,
+                signal overload and drop.
+            - If witin limits, signal green light.
+        """
+        # // Unnecessary re-definitions for better readability.
+        current = len(self.dataobj_queue)
+        hard = self.dataobj_queue_max_threshold_hard
+        soft = self.dataobj_queue_max_threshold_soft
 
-            NOT IMPLEMENTED BUT:
-                - Should send a signal to module caller.
-        """ 
-        pass
-
+        if current >= hard:
+            self.cond_print("check_queue_drop: hard threshold reached. Dropping obj.")
+            self.dataobj_queue_overloaded = True
+            self.dataobj_queue.pop(0) # @ consider doing this multiple times.
+        elif current >= soft and current <= hard:
+            self.cond_print("check_queue_drop: soft threshold reached")
+            self.dataobj_queue_overloaded = True
+        else:
+            self.dataobj_queue_overloaded = False
+        
 
     def create_initial_ring(self, dataobjects: list, cached_siminet: bool = True) -> None:
         """ Creates the initial/main root ring in the db structure.
@@ -85,7 +114,7 @@ class DBMana():
         self.gdbcom.cache_execute(_single_transaction = False)
 
 
-    def autoinsertion(self, new_node, cached_siminet: bool = True, ) -> None:
+    def autoinsertion(self, new_node, cached_siminet: bool = True ) -> None:
         """ Inserts new DataObj into db.
             Note: NEEDS AN INITIAL RING.
             Creates a siminet for new_node and compares against the siminet
@@ -98,7 +127,7 @@ class DBMana():
             of the db, but will naturally increase the db size.
         """
 
-        def insert(current_ring, current_object):
+        def insert(current_ring:list, current_object) -> None:
             ring_names = [obj.name for obj in current_ring] # // For cond_print.
             if len(current_ring) < self.ringsize:
                 # // Always fill minimum ringsize.
@@ -119,9 +148,9 @@ class DBMana():
                             degrees=3
                         )
                 if result is None:
+                    # // No similar objects found
                     if not self.static_ringsize:
-                        # // No similar objects found, just add to ring if 
-                        # // the ringsize is dynamic.
+                        # // Just add to ring if the ringsize is dynamic.
                         self.gdbcom.create_node_endof_ring(
                             obj_ring=current_ring,
                             obj_new=current_object
@@ -136,7 +165,7 @@ class DBMana():
                 target_obj = current_ring[result]
                 below = self.gdbcom.get_node_below(obj=target_obj)
                         
-                if not below: # // If target_obj has no nodes/rings under it, create it.
+                if not below: # // If target_obj has no nodes/rings under it, create one.
                     self.cond_print(f"new {current_object.name} below {target_obj.name}")
                     self.gdbcom.create_node_below(obj_above=target_obj, new_obj=current_object)
                     self.gdbcom.cache_execute(_single_transaction = False)
@@ -154,177 +183,154 @@ class DBMana():
             insert(ring_root, new_node)
 
 
-    def clockwork_traversal(self, sort:bool = True) -> None:
-        """ Goes through the db structure, in a clockwork-type fashion.
-            Not based on recursion because structure might change while
-            doing these operations.
+    def re_introduce_descendants_of(self, dataobj) -> None:
+        """ Detach and delete dataobjects, and re-introduce them
+            into the db structure.
         """
-        def set_first():
+        # // Cache all descendants of dataobj and delete them from db.
+        descendants = self.gdbcom.get_descendants(dataobj)
+        self.cond_print(f"Reintroducing: {[node.name for node in descendants]}")
+        self.gdbcom.delete_nodes(descendants)
+        # // Re-introduce.
+        for node in descendants:
+            # // Do not create a new siminet for each node, since 
+            # // siminets would have already been created if necessary.
+            self.autoinsertion(new_node=node, cached_siminet=False)    
+
+
+    def clockwork_traversal(self, sort:bool = True, continuous:bool = False) -> GeneratorExit:
+        """ Traverse database structure. Options:
+                - Sort=True will start a sort at the end of each ring.
+                - Continuous=True will traverse forever.
+
+            NOTE: This is a generator method, will yield after a sort.
+            
+            Structure might change during recursion if sort=True but this
+            should not affect recursion safety (due to consideration during
+            implementation). 
+        """
+        def rec_task(current_ring:list) -> None:
+            for node in current_ring:
+                self.cond_print(f"--clockwork_traversal: current name is '{node.name}'")
+                node_below = self.gdbcom.get_node_below(obj=node)
+                if node_below:
+                    self.cond_print("--clockwork_traversal: Going down.")
+                    ring_below = self.gdbcom.get_ring_from_obj(obj=node_below[0])
+                    # // Stack yield
+                    yield from rec_task(current_ring=ring_below)
+
+                if self.gdbcom.check_if_last(node): # // Exit if last.
+                    self.cond_print("--clockwork_traversal: CYCLED.")
+                    return
+
+                # // Check if anything is above, sort if so (if that is specified).
+                # // Yield only if sorting is enabled.
+                node_above = self.gdbcom.get_node_above(obj=node)
+                if node_above and sort: self.clockwork_sort(node); yield
+
+        while True:
             unordered_root_ring = self.gdbcom.get_ring_root()
             ordered_root_ring = self.gdbcom.get_ring_from_obj(obj=unordered_root_ring[0])
-            self.clockwork_current_node = ordered_root_ring[0]
-        # // Set first node.
-        if self.clockwork_current_node == None: set_first()
-        # @ TODO: Re-introduce when one round is done
-        while True:
-            #input()# // @ for development
-            self.cond_print(f"current name: '{self.clockwork_current_node.name}'")
-            # // Go down as far as possible on each TICK.
-            node_below = self.gdbcom.get_node_below(obj=self.clockwork_current_node)
-            if node_below:
-                self.clockwork_current_node = node_below[0]
-                continue
-            else:
-                # // Check if this is the last node on ring.
-                node_above = self.gdbcom.get_node_above(obj=self.clockwork_current_node)
-                if not node_above: # // If that's not the case; tick and continue.
-                    node_tick = self.gdbcom.get_node_tick(obj=self.clockwork_current_node)
-                    if not node_tick: raise ValueError # // @ for development.
-                    self.clockwork_current_node = node_tick[0]
-                    continue
-                else: # // Case: Last node on ring.
-                    # // Check if current is the last node in db structure.
-                    if self.gdbcom.check_if_last(self.clockwork_current_node): 
-                        set_first()
-                        print("LAST")
-                        return # // @ Deb 
-                        
-                    node_tick = []
-                    # // Empty node_tick means that next is UP. This can occur
-                    # // multiple times, so keep trying.
-                    print(f"node above: {node_above[0].name}") # @
-                    while not node_tick:
-                        if self.gdbcom.check_if_last(node_above[0]):
-                            set_first()
-                            print("LAST Z")
-                            return
-                        node_tick = self.gdbcom.get_node_tick(obj=node_above[0])
-                        node_above = self.gdbcom.get_node_above(node_above[0])
-                        print("UPWARDS LOOP")
+            yield from rec_task(current_ring=ordered_root_ring) # // Yield stacks.
+            if not continuous: return
 
-                    # // Sort when the next node is UP, but only 
-                    # // after next is calculated (block above).
-                    if sort: self.clockwork_sort()
 
-                    self.clockwork_current_node = node_tick[0]
-                    if self.gdbcom.check_if_last(node_tick[0]):
-                        set_first()
-                        print("LAST M")
-                        return
-                    print("END OF TRAV")
-                    continue
-        
-
-    # def clockwork_sort(self) -> None:
-    #     # // guard no current ring
-    #     if not self.clockwork_current_node: 
-    #         #self.cond_print("clockwork_sort: No current ring, aborting")
-    #         print("clockwork_sort: No current ring, aborting") # @ deb 
-    #         return
-    #     # // get ring, including above.
-    #     ordered_root_ring = self.gdbcom.get_ring_from_obj(obj=self.clockwork_current_node)
-    #     node_above = self.gdbcom.get_node_above(self.clockwork_current_node)
-    #     ordered_root_ring.insert(0, node_above)
-    #     return
-        # // get connectors to above (a).
-        # // Detach (a)
-        # // Sort
-        # // if sorted:
-        # //    if new representative has below connectors
-        # //        get below connectors of representative (b)
-        # //        Detach (b)
-        # // Attach representative (a)
-        # // Re-introduce (b) and attach.
-
-    def get_connectors_of(self, obj):
-
-        cmd = f"""
-            MATCH (org), (other)
-            WHERE org.unique_id = '{obj.unique_id}'
-            MATCH (org)-[connector]-(other)
-            RETURN other, connector, startNode(connector) as startRef
+    def clockwork_sort(self, current) -> None:
+        """ This method takes a ring(including above node), sorts it, and
+            swaps nodes accordingly
         """
-        return self.gdbcom.execute_return(cmd=cmd)
-
-    def swap_node(self, obj_from, obj_to) -> None:
-        # // Not necessary to replace a node with itself.
-        if obj_from.unique_id == obj_to.unique_id: return
-
-        # @@@ could do a faux check
-        #content = backups[swap_index]
-        siminet_formatted = data_object_tools.siminet_compressed_to_txt(obj_from.siminet_compressed)
-        # // Not doing replacement within cypher like this:
-        # //    'SET obj_to.name = obj_from.name'
-        # // Because obj_a might have been swapped. This is the 
-        # // reason behind having a backup list of dataobj
-        # //
-        # // Warning: while this happens, two nodes with the same ..
-        # // unique id can exist.
-
-        cmd = f""" 
-            MATCH (obj_to)
-            WHERE obj_to.unique_id = '{obj_to.unique_id}'
-
-            SET obj_to.unique_id = '{obj_from.unique_id}'
-            SET obj_to.name = "{obj_from.name}"
-            SET obj_to.text = '{obj_from.text}'
-            SET obj_to.siminet_compressed = "{siminet_formatted}"
-
-        """
-        self.gdbcom.cache_commands.append(cmd)
-        
-    def swap_nodes(self, objs_old, objs_new):
-
-        cmd = ""
-
-        for i, obj in enumerate(objs_old):
-            cmd += f"MATCH (objOld{i}) WHERE objOld{i}.unique_id = '{obj.unique_id}'"
-
-        for i in range(len(objs_old)):
-            siminet_formatted = data_object_tools.siminet_compressed_to_txt(
-                                    objs_new[i].siminet_compressed
-                                )
-            self.cond_print(
-                f"Que swap: '{objs_new[i].name}' -> node({objs_old[i].name})"
-            )
-            cmd += f"""
-                SET objOld{i}.unique_id = '{objs_new[i].unique_id}'
-                SET objOld{i}.name = "{objs_new[i].name}"
-                SET objOld{i}.text = '{objs_new[i].text}'
-                SET objOld{i}.siminet_compressed = "{siminet_formatted}"
-            """
-        self.gdbcom.cache_commands.append(cmd)
-        self.gdbcom.cache_execute(False)
-
-
-    def clockwork_sort(self) -> None:
-        # // Guard empty current node.
-        if not self.clockwork_current_node: 
+        self.cond_print("   STARTING SORT")
+        # // Guard empty node.
+        if not current: 
             self.cond_print("clockwork_sort: No current node, aborting")
             return
         # // Get ring, including above.
-        ordered_root_ring = self.gdbcom.get_ring_from_obj(obj=self.clockwork_current_node)
-        node_above = self.gdbcom.get_node_above(self.clockwork_current_node)[0]
+        ordered_root_ring = self.gdbcom.get_ring_from_obj(obj=current)
+        node_above = self.gdbcom.get_node_above(current)[0]
         ordered_root_ring.insert(0, node_above)
         ring_old = ordered_root_ring # @ fix naming
-        print(f"ORIGINAL: {[ obj.name for obj in ring_old]}")
+        self.cond_print(f"  ORIGINAL: {[ obj.name for obj in ring_old]}")
         # // Attempt sorting by similarity.
         representative_result = self.simitool.get_representatives(
             objects=ring_old, cached_siminet=True
             )
-        print(f"ORDERED: {[obj.name for obj in representative_result[1]]}")
+        self.cond_print(f"  ORDERED: {[obj.name for obj in representative_result[1]]}")
         # // Skip if order in new and old ring is the same.
         if not representative_result[0]: # // Check order change.
-            self.cond_print("clockwork_sort: ran sort but order has not changed.")
+            self.cond_print("   clockwork_sort: ran sort but order has not changed.")
             return
 
         ring_new = representative_result[1]
-        print(f"NEW REP: {ring_new[0].name}")
-        self.swap_nodes(objs_old=ring_old, objs_new=ring_new)
+        # // Check if representative has changed
+        if ring_new[0].unique_id == ring_old[0].unique_id:
+            # // If so, just re-introdue rings below least rep.
+            self.cond_print("   Order changed, but rep is the same. Re-introducing least rep.")
+            self.re_introduce_descendants_of(ring_new[-1])
+        else:
+            # // Else re-introduce and do swaps.
+            self.cond_print(f"  NEW REP: {ring_new[0].name}, OLD REP:{ring_old[0].name}")
+            self.re_introduce_descendants_of(ring_new[0])
+            if self.conservative_swaps:     
+                first_new = ring_new[0]
+                first_old = ring_old[0]
+                self.gdbcom.swap_nodes(
+                    objs_old=[first_old, first_new], 
+                    objs_new=[first_new, first_old])
+            else: 
+                self.gdbcom.swap_nodes(objs_old=ring_old, objs_new=ring_new)
+
 
     def event_loop(self) -> None:
         """ Alternating between autoinsertion, clockwork_sort, query and check_queue_drop.
             Created to be self-sufficient main loop of this class; run once and
             let it be.
+            NOTE: Meant to be ran in async (using custom_thread)
         """
-        pass
+        
+        sort_generator = self.clockwork_traversal(sort=True, continuous=False)
+        # while True:
+        #     # // Handle node queue limits.
+        #     print("inner loop")
+        #     self.check_queue_drop()
+        #     if self.dataobj_queue:
+        #         self.cond_print("event_loop: Started autoinsertion")
+        #         new_node = self.dataobj_queue.pop(0)
+        #         self.autoinsertion(new_node=new_node, cached_siminet=True)
+        #         self.cond_print("event_loop: Ended autoinsertion")
+        #     try:
+        #         self.cond_print("event_loop: Started Sort")
+        #         next(sort_generator)
+        #         self.cond_print("event_loop: Ended Sort")
+        #     except StopIteration:
+        #         self.cond_print("event_loop: async (outer) loop.")
+        #         print("StopIteration")
+        #         break
+        # print("looped event_loop")
+
+        while self.event_loop_enabled: 
+            self.check_queue_drop()
+            # // Insert new
+            if self.dataobj_queue:
+                self.cond_print("event_loop: Started autoinsertion")
+                new_node = self.dataobj_queue.pop(0)
+                self.autoinsertion(new_node=new_node, cached_siminet=True)
+                self.cond_print("event_loop: Ended autoinsertion")
+                print(f"Added '{new_node.name}'")
+            try:
+                self.cond_print("event_loop: Started Sort")
+                next(sort_generator)
+                self.cond_print("event_loop: Ended Sort")
+            except StopIteration:
+                self.cond_print("event_loop: Restarted Sort")
+                sort_generator = self.clockwork_traversal(sort=True, continuous=False)
+
+
+    def start_event_loop(self) -> None:
+        self.cond_print("Starting async event loop")
+        self.event_loop_thread.run()
+        
+
+    def stop_event_loop(self) -> None:
+        print("Stopping event loop")
+        self.event_loop_thread.stop()
+        self.event_loop_enabled = False
