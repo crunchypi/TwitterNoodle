@@ -1,5 +1,6 @@
 import gensim.downloader as api
 from packages.cleaning.data_object import DataObj
+from packages.cleaning.basic_cleaner import BasicCleaner
 
 # // Model Info:
 # //    https://raw.githubusercontent.com/RaRe-Technologies/gensim-data/master/list.json
@@ -73,11 +74,13 @@ class ProcessSimilarity():
                     pass 
             return current_degree # // Give back.
 
+        # // Get siminet, compress it and clean it before return.
         result = calculate(query, current_recursion, max_recursion)
-        # // Add the original keywords to result:
-        #for item in query: result.insert(0, [0, item, item, 1]) # // Note: Removed while backref isn't fixed.
+        compressed = self.compress_similarity_net(result)
+        self.clean_siminet(compressed)
+
         self.cond_print(f"Ended similarity fetch for: {query}.") 
-        return self.compress_similarity_net(result)
+        return compressed
 
 
     def compress_similarity_net(self, lst:list) -> list:
@@ -106,6 +109,12 @@ class ProcessSimilarity():
             new_lst.append([current_word, current_score])
         return new_lst
 
+
+    def clean_siminet(self, siminet:list) -> None:
+        " Cleans a scompressed siminet in-place."  
+        for i, pair in enumerate(siminet):
+            # // Replace word with cleaned word.
+            siminet[i][0] = BasicCleaner.clean_punctuation(pair[0])
 
 
     def get_score_compressed_siminet(self, new:list, other:list):
@@ -138,7 +147,9 @@ class ProcessSimilarity():
         # // Check if siminet exists.
         error_suffix = "does not have a simi-net"
         if new_object.siminet == None: raise ValueError(f"'new_object' {error_suffix}")
-        for other in other_objects: if other.siminet == None: raise ValueError(f"'other' {error_suffix}")
+        for other in other_objects: 
+            if other.siminet == None: 
+                raise ValueError(f"'other' {error_suffix}")
 
         # // Get top index.
         score_highest = 0 
@@ -176,7 +187,8 @@ class ProcessSimilarity():
         """ 
 
         # // Reject lack of siminet
-        for x in objects: if x.siminet == None: raise ValueError(
+        for x in objects: 
+            if x.siminet == None: raise ValueError(
             "Object does not have a simi-net."
         )
 
