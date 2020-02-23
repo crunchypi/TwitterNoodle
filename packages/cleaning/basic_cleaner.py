@@ -59,6 +59,8 @@ class BasicCleaner():
                                                data_obj.text,
                                                sentiment_range
                                         )
+        # // Clean name (db safety).
+        data_obj.name = self.clean_punctuation(data_obj.name)
 
         if verbosity:
             self.print_comparison(data_obj, text_raw)
@@ -89,7 +91,8 @@ class BasicCleaner():
             for char in chunk:
                 if char.isalpha():
                     tmp += char
-            new_string += f" {tmp}" # // could check if tmp only contains space.
+            if len(tmp) > 0:
+                new_string += f" {tmp}" # // could check if tmp only contains space.
         return new_string
 
     @staticmethod
