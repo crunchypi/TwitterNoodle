@@ -32,7 +32,6 @@ class ProcessSimilarity():
 
     def get_similarity_net(self, 
                            query:list, 
-                           current_recursion:int = 0, # // Remove? @
                            max_recursion:int = 2) -> list:
         """ Wrapper for similarity net creator, containing the creator, with some  
             necessary safety checks and additional operations, mainly siminet compression.
@@ -52,35 +51,45 @@ class ProcessSimilarity():
             This removes duplicates while preserving the correct score. 
             Recursion_lvl and query(camefrom) is removed as well.
         """
+        # // Do setup check and value check.
         if self.w2v_model is None:
             self.cond_print("Word 2 Vector model not set, aborting.")
             return
+        if max_recursion < 1: raise ValueError("Expected minimum recursion of 1")
         self.cond_print(f"Starting similarity fetch for: {query}.")
+        
+        def validate_next(content:str) -> bool:
+            " Validate a word before more recursion (performance boost)."
+            # // Signal False if there is a non-alpha.
+            for char in content: 
+                if not char.isalpha(): 
+                    return False
+            if len(content) < 2: return False # // Signal False if len is insufficient
+            return True
 
         def calculate(query:list, current_recursion:int, max_recursion:int) -> list:
             # // TODO: Back-references?
-            if current_recursion >= max_recursion: return False # // Exit clause.
+            if current_recursion >= max_recursion: return [] # // Exit clause.
             current_degree = []
             for word in query:
                 try:
                     sim_lst = self.w2v_model.most_similar(word) # // Query w2v
                     for item in sim_lst:
                         next_query = [item[0]] # // next query, chunked. 
-                        current_degree.append([current_recursion, word, item[0],item[1]]) # // Save.
-                        
-                        result = calculate(next_query, current_recursion + 1, max_recursion) # // Recurs.
-                        if result: current_degree.extend(result) # // Save.
+
+                        if validate_next(item[0]): # // Drop words with punctuation
+                            current_degree.append([current_recursion, word, item[0],item[1]]) # // Save.
+                            result = calculate(next_query, current_recursion + 1, max_recursion) # // Recurs.
+                            if result: current_degree.extend(result) # // Save.
                 except KeyError:
                     pass 
             return current_degree # // Give back.
 
-        # // Get siminet, compress it and clean it before return.
-        result = calculate(query, current_recursion, max_recursion)
-        compressed = self.compress_similarity_net(result)
-        self.clean_siminet(compressed)
-
+        # // Get siminet, compress it and return
+        result = calculate(query, 0, max_recursion)
         self.cond_print(f"Ended similarity fetch for: {query}.") 
-        return compressed
+        return self.compress_similarity_net(result)
+
 
 
     def compress_similarity_net(self, lst:list) -> list:
@@ -108,13 +117,6 @@ class ProcessSimilarity():
                     current_score += other_item[3] / (other_item[0] + 1)
             new_lst.append([current_word, current_score])
         return new_lst
-
-
-    def clean_siminet(self, siminet:list) -> None:
-        " Cleans a scompressed siminet in-place."  
-        for i, pair in enumerate(siminet):
-            # // Replace word with cleaned word.
-            siminet[i][0] = BasicCleaner.clean_punctuation(pair[0])
 
 
     def get_score_compressed_siminet(self, new:list, other:list):
