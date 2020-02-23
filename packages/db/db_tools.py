@@ -27,7 +27,23 @@ class GDBCom():
     def delete_all(self):
         self.cache_commands.append('match (x) detach delete x')
 
-
+    def delete_nodes(self, dataobjects:list)-> None:
+        " Deletes all specified nodes. Executes immediately"
+        if not dataobjects: return # // No point in doing anything if empty.
+        cmd = ""
+        for node in dataobjects:
+            # // Note: cypher variables are enumerated like this because
+            # // they need to be unique, and because using names can lead to isses.
+            cmd += \
+            f"""
+                 MATCH (node{node.unique_id})
+                 WHERE node{node.unique_id}.unique_id = '{node.unique_id}'
+            """
+        cmd += f"""
+            DETACH DELETE {", ".join([f"node{node.unique_id}" for node in dataobjects])}
+        """
+        self.cache_commands.append(cmd)
+        self.cache_execute(_single_transaction = False)        
 
     def cache_execute(self, _single_transaction):
         with self.graphDB_Driver.session() as GDBS:
@@ -264,6 +280,81 @@ class GDBCom():
             CREATE (aliasnode_below)-[:TICK]->(aliasnode_below)
         """
         self.cache_commands.append(cmd)
+
+    def get_descendants(self, dataobj) -> list:
+        """ Get all descendants of a certain node.
+        """
+        def bungee(dataobj):
+            total = []
+            node_below = self.get_node_below(dataobj)
+
+            if node_below:
+                node_below = node_below[0]
+                below_ring = self.get_ring_from_obj(obj=node_below)
+
+                for node in below_ring:
+                    total.append(node)
+                    total.extend(bungee(node))
+            return total
+
+        return bungee(dataobj)
+
+    def get_connectors_of(self, obj):
+
+        cmd = f"""
+            MATCH (org), (other)
+            WHERE org.unique_id = '{obj.unique_id}'
+            MATCH (org)-[connector]-(other)
+            RETURN other, connector, startNode(connector) as startRef
+        """
+        result = self.execute_return(cmd=cmd)
+        # // TEST: show all connectors and such
+        # print(obj.name)
+        # for i, d_dict in enumerate(result):
+        #     print() # // space for visualisation
+        #     for key in d_dict:
+        #         print() # // space for visualisation
+        #         print(f"{i}: {key}")
+        #         if key == "startRef":
+        #             print(d_dict.get(key).id)
+        #         if key == "connector":
+        #             print("-Connector properties-:")
+        #             #print(d_dict.get(key))
+        #             print(d_dict.get(key).id)
+        #             print(d_dict.get(key).type)
+        #         if key == "other":
+        #             print("-node properties-:")
+        #             #print(d_dict.get(key))
+        #             print(d_dict.get(key).id)
+        #             print(d_dict.get(key).get("name"))
+        #             print(d_dict.get(key).get("unique_id"))
+        return result
+
+    def swap_nodes(self, objs_old:list, objs_new:list) -> None: # // lists of dataobj
+
+            cmd = ""
+            # // Enumerate old objects for identification later on.
+            for i, obj in enumerate(objs_old):
+                cmd += f"MATCH (objOld{i}) WHERE objOld{i}.unique_id = '{obj.unique_id}'"
+
+            # // Do swaps.
+            for i in range(len(objs_old)):
+                # // Format siminets such that the database can contain them.
+                siminet_formatted = data_object_tools.siminet_compressed_to_txt(
+                                        objs_new[i].siminet_compressed
+                                    )
+                self.print_progress( # // Status update
+                    f"Que swap: '{objs_new[i].name}' -> node({objs_old[i].name})"
+                )
+                cmd += f"""
+                    SET objOld{i}.unique_id = '{objs_new[i].unique_id}'
+                    SET objOld{i}.name = "{objs_new[i].name}"
+                    SET objOld{i}.text = '{objs_new[i].text}'
+                    SET objOld{i}.siminet_compressed = "{siminet_formatted}"
+                """
+            # @ Auto-execute; might use this as an option.
+            self.cache_commands.append(cmd)
+            self.cache_execute(False)
 
 
     def get_node_next(self, obj, rel_type: str) -> list:
