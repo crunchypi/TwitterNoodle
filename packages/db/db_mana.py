@@ -185,7 +185,7 @@ class DBMana():
         for node in descendants:
             # // Do not create a new siminet for each node, since 
             # // siminets would have already been created if necessary.
-            self.autoinsertion(new_node=node, cached_siminet=False)    
+            self.autoinsertion(new_node=node)    
 
 
     def clockwork_traversal(self, sort:bool = True, continuous:bool = False) -> GeneratorExit:
@@ -268,6 +268,100 @@ class DBMana():
                 self.gdbcom.swap_nodes(objs_old=ring_old, objs_new=ring_new)
 
 
+    def query_auto(self, q_dataobj) -> list:
+
+        ring_root = self.gdbcom.get_ring_root()
+        if not ring_root: raise ValueError("No ring root.")
+
+        def rec_task(current_ring:list) -> list:
+            collection = []
+            similar_other_index = self.simitool.get_top_simi_index(
+                                    new_object=q_dataobj, 
+                                    other_objects=current_ring, 
+                                    degrees=3
+            )
+            if similar_other_index is not None:
+                # // If there exists a similar other
+                # // on current ring -> add whole ring
+                collection.extend(current_ring)
+                node_below = self.gdbcom.get_node_below(
+                    obj=current_ring[similar_other_index]
+                )
+                # // Only continue recursion if there are more
+                # // rings below the most similar obj/node.
+                if node_below:
+                    ring_below = self.gdbcom.get_ring_from_obj(obj=node_below[0])
+                    rec_result = rec_task(current_ring=ring_below)
+                    if rec_result: collection.extend(rec_result)
+            return collection
+
+        return rec_task(current_ring=ring_root)
+
+
+    def query_threshold_selective(self, q_siminet:list, threshold:float) -> list:
+        """ Query by siminet and threshold: goes into sub-rings
+            of those nodes which fall under this criteria:
+                SimilarityScore(siminet, other) > threshold.
+        """
+
+        ring_root = self.gdbcom.get_ring_root()
+        if not ring_root: raise ValueError("No ring root.")
+
+        def rec_task(current_ring:list):
+            collection = []
+            # // Add any node from current ring if the node 
+            # // satisfies the similarity threshold.
+            for obj in current_ring:
+                score = self.simitool.get_score_compressed_siminet(
+                    new=q_siminet, 
+                    other=obj.siminet) 
+                if score >= threshold:
+                    collection.append(obj)
+
+            # // Go through similar nodes and get do recursion.
+            rec_collection = []
+            for obj in collection:
+                node_below = self.gdbcom.get_node_below(obj=obj)
+                if node_below:
+                    ring_below = self.gdbcom.get_ring_from_obj(obj=node_below[0])
+                    rec_result = rec_task(ring_below)
+                    if rec_result: rec_collection.extend(rec_result)
+
+            collection.extend(rec_collection)
+            return collection
+
+        return rec_task(ring_root)
+
+
+    def query_threshold_all(self, q_siminet:list, threshold:float) -> list:
+        """ Goes through the entire db structure and adds nodes 
+            if they satisfy the similarity 'threshold' of
+            'q_siminet'
+        """
+        ring_root = self.gdbcom.get_ring_root()
+        if not ring_root: raise ValueError("No ring root.")
+
+        def rec_task(current_ring:list) -> list:
+            collection = []
+
+            for obj in current_ring:
+                score = self.simitool.get_score_compressed_siminet(
+                    new=q_siminet, 
+                    other=obj.siminet) 
+                if score >= threshold:
+                    collection.append(obj)
+
+                node_below = self.gdbcom.get_node_below(obj=obj)
+                if node_below:
+                    ring_below = self.gdbcom.get_ring_from_obj(obj=node_below[0])
+                    rec_result = rec_task(ring_below)
+                    if rec_result: collection.extend(rec_result)
+
+            return collection
+
+        return rec_task(ring_root)
+
+
     def event_loop(self) -> None:
         """ Alternating between autoinsertion, clockwork_sort, query and check_queue_drop.
             Created to be self-sufficient main loop of this class; run once and
@@ -283,7 +377,7 @@ class DBMana():
             if self.dataobj_queue:
                 self.cond_print("event_loop: Started autoinsertion")
                 new_node = self.dataobj_queue.pop(0)
-                self.autoinsertion(new_node=new_node, cached_siminet=True)
+                self.autoinsertion(new_node=new_node)
                 self.cond_print("event_loop: Ended autoinsertion")
                 print(f"Added '{new_node.name}'")
             try:
