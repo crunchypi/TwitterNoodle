@@ -2,7 +2,7 @@
 from packages.cleaning import data_object
 
 
-def get_dataobj_converted(tweet):
+def convert_tweet2dataobj(tweet):
     new_obj = data_object.DataObj()
     new_obj.unique_id = tweet.id_str
     new_obj.name = tweet.user.name
