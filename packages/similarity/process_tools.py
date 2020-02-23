@@ -229,25 +229,26 @@ class ProcessSimilarity():
                     if mentions_index == dict_index:
                         score_dict[dict_index] += 1
             # // Unpack dict data into sorted_objects for end result.
-            # for _ in range(len(objects)):
-            #     top_index = sorting_helper(score_dict)
-            #     if top_index != None:
-            #         sorted_objects.append(objects[top_index])
-            #         del score_dict[top_index] # // Clear key with top score.
-            #     else: 
-            #         # // No highscore is found, meaning that remaining scores
-            #         # // are all 0. Now remaining indeces can be added at the 
-            #         # // end of the sorted list.
-            #         remaining_indeces = list(score_dict.keys())
-            #         for i in remaining_indeces:
-            #             sorted_objects.append(objects[i])
-            #         break
+            for _ in range(len(objects)):
+                top_index = sorting_helper(score_dict)
+                if top_index != None:
+                    sorted_objects.append(objects[top_index])
+                    del score_dict[top_index] # // Clear key with top score.
+                else: 
+                    # // No highscore is found, meaning that remaining scores
+                    # // are all 0. Now remaining indeces can be added at the 
+                    # // end of the sorted list.
+                    remaining_indeces = list(score_dict.keys())
+                    for i in remaining_indeces:
+                        sorted_objects.append(objects[i])
+                    break
+
             # // Arrange dict by value (low->high)
-            dict_sorted = {key: val for key, val in 
-                            sorted(score_dict.items(), key=lambda item: item[1])}
-            indeces_sorted = list(dict_sorted) # // Low->High mention count order.
-            indeces_sorted.reverse() # // Reverse order since we want high->low.
-            sorted_objects = [objects[index] for index in indeces_sorted]
+            # dict_sorted = {key: val for key, val in 
+            #                 sorted(score_dict.items(), key=lambda item: item[1])}
+            # indeces_sorted = list(dict_sorted) # // Low->High mention count order.
+            # indeces_sorted.reverse() # // Reverse order since we want high->low.
+            # sorted_objects = [objects[index] for index in indeces_sorted]
 
 
         else: # // Not possible to sort in a meaningful way, return as is.
