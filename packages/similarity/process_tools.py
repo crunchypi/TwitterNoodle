@@ -32,10 +32,11 @@ class ProcessSimilarity():
     def get_similarity_net(self, 
                            query:list, 
                            current_recursion:int = 0, # // Remove? @
-                           max_recursion:int = 2,
-                           compress:bool = True) -> list:
-        """ Wrapper for similarity net creator, containing the creator, with some 
+                           max_recursion:int = 2) -> list:
+        """ Wrapper for similarity net creator, containing the creator, with some  
             necessary safety checks and additional operations, mainly siminet compression.
+
+            @@ add: forced siminet
 
             The siminet creator itself (called 'calculate') goes through each query
             word in a list and gets similar words, which are passed into the function
@@ -76,8 +77,7 @@ class ProcessSimilarity():
         # // Add the original keywords to result:
         #for item in query: result.insert(0, [0, item, item, 1]) # // Note: Removed while backref isn't fixed.
         self.cond_print(f"Ended similarity fetch for: {query}.") 
-        if compress: result = self.compress_similarity_net(result)
-        return result
+        return self.compress_similarity_net(result)
 
 
     def compress_similarity_net(self, lst:list) -> list:
@@ -107,15 +107,6 @@ class ProcessSimilarity():
         return new_lst
 
 
-    def get_score_from_str(self, new:str, existing:str, degrees:int = 2) -> float:
-        # // Note: add degree filter range? @@
-        """ Takes two texts/sentences/words (str) and fetches a siminet for both,
-            before passing it along to a scoring system, and returning the result.
-        """
-        result_new = self.get_similarity_net(new.split(), max_recursion = degrees)
-        result_existing = self.get_similarity_net(existing.split(), max_recursion = degrees)
-        return self.get_score_compressed_siminet(new=result_new, other=result_existing)
-
 
     def get_score_compressed_siminet(self, new:list, other:list):
         """ Takes two siminets and compares words. Upon match, the total
@@ -138,50 +129,35 @@ class ProcessSimilarity():
     def get_top_simi_index(self, 
                            new_object:DataObj, 
                            other_objects:list, 
-                           degrees:int = 2,
-                           mode:str = "siminet_compressed") -> int: # // @ Add support for Any (incl None).
-        """ Takes a DataObj (lets call it 'A') and a list of other DataObj (lets call them 'B').
-            'A' is matched against all items in 'B' to find which one if B is most similar to 'A'.
-            This can be done in two ways:
-                1: Create a new siminet for all DataObj and do a score. This is done
-                    with the mode (param) 'text'. This uses the degrees param.
-                2: Use the siminet of all DataObj (without creating new ones) and skip
-                    directly to scoring. Done with the mode (param) 'siminet_compressed'
-                    This naturally requires that all DataObj already have siminets (compressed) 
-                    cached, otherwise the result will always crash. This option is naturally 
-                    a lot faster than option 1 though.
-            
-        """
- 
-        valid_modes = ["text", "siminet_compressed"]
-        if mode not in valid_modes: 
-            self.cond_print("ProcessSimilarity.get_top_simi_index(): "+
-                             f"selected mode '{mode}' is invalid. Aborting.")
-            return
+                           degrees:int = 2) -> int: # // @ Add support for Any (incl None).
+        """ Takes a DataObj and [DataObj] and matches simi-nets of all [DataObj] against
+            Dataobj to find the best match(similarity). Returns an index to the [Dataobj].
 
+            Exceptions: ValueError if any of the dataobjects lack a siminet
+        """
+        # // Check if siminet exists.
+        error_suffix = "does not have a simi-net"
+        if new_object.siminet == None: raise ValueError(f"'new_object' {error_suffix}")
+        for other in other_objects: if other.siminet == None: raise ValueError(f"'other' {error_suffix}")
+
+        # // Get top index.
         score_highest = 0 
         index = None
         for i, other in enumerate(other_objects):
-            score_current = 0
-            if mode == "text":
-                # // new_obj data could probably be stored before loop... @@
-                score_current = self.get_score_from_str( # 
-                    new=new_object.text, 
-                    existing=other.text, 
-                    degrees=degrees)
-            else:
-                score_current = self.get_score_compressed_siminet(
-                    new=new_object.siminet_compressed,
-                    other=other.siminet_compressed)
-
-            self.cond_print(f"{new_object.text} + {other.text} = {score_current}")
+            # // Get similarity score
+            score_current = self.get_score_compressed_siminet(
+                    new=new_object.siminet,
+                    other=other.siminet
+            )
+            self.cond_print(f"'{new_object.text}' + '{other.text}' = {score_current}")
+            # // Update highest if necessary.
             if score_current > score_highest:
                 score_highest = score_current
                 index = i
         return index
 
 
-    def get_representatives(self, objects:list, cached_siminet:bool = True) -> list:
+    def get_representatives(self, objects:list) -> list:
         """ Takes in a list of DataObjects, sorts it by similarity and returns 
             a list: [status:bool, [sorted_objects]], where status refers to
             whether or not the sorted list order is new (as in, not identical
@@ -195,7 +171,16 @@ class ProcessSimilarity():
             more than two objects, because representative of two doesn't make
             sense in this context. In these cases, the status bool in the returned
             list will always be False.
+
+            Exception: ValueError if any object lacks a siminet.
         """ 
+
+        # // Reject lack of siminet
+        for x in objects: if x.siminet == None: raise ValueError(
+            "Object does not have a simi-net."
+        )
+
+
         def sorting_helper(score_dict: dict):
             "Return key with highest integer value in a dict."
             highscore = 0
@@ -208,7 +193,6 @@ class ProcessSimilarity():
                     highscore_key = key
             return highscore_key
 
-        # // @@ cached_siminet = False is not implemented yet.
         objects = objects.copy()
         sorted_objects = []
         if len(objects) > 2: # // sort only if there are enough DataObjects.
@@ -242,14 +226,6 @@ class ProcessSimilarity():
                     for i in remaining_indeces:
                         sorted_objects.append(objects[i])
                     break
-
-            # // Arrange dict by value (low->high)
-            # dict_sorted = {key: val for key, val in 
-            #                 sorted(score_dict.items(), key=lambda item: item[1])}
-            # indeces_sorted = list(dict_sorted) # // Low->High mention count order.
-            # indeces_sorted.reverse() # // Reverse order since we want high->low.
-            # sorted_objects = [objects[index] for index in indeces_sorted]
-
 
         else: # // Not possible to sort in a meaningful way, return as is.
             return [False, objects]
