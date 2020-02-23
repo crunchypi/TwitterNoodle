@@ -1,6 +1,6 @@
 from nltk.corpus import stopwords 
 
-import_file = "../custom_stopwords_list.txt"
+import_file = "packages/cleaning/custom_stopwords_list.txt"
 
 l = []
 
