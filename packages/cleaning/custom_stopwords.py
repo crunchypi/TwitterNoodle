@@ -2,21 +2,20 @@ from nltk.corpus import stopwords
 
 import_file = "packages/cleaning/custom_stopwords_list.txt"
 
-l = []
+collection = []
 
-def file_to_list(_in, _list):
-    with open(_in, "r") as f:
+def file_to_list(path, out_list):
+    with open(path, "r") as f:
         content = f.readline()
         while content:
-            w = content.strip()
-            _list.append(w)
+            word = content.strip()
+            out_list.append(word)
             content = f.readline()
 
 
 def main():
-    file_to_list(import_file, l)
+    file_to_list(import_file, collection)
     stop_words = stopwords.words('english')
-    l.extend(stop_words)
-    return set(l)
-
+    collection.extend(stop_words)
+    return set(collection)
 
