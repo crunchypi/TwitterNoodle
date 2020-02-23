@@ -1,4 +1,16 @@
 # // Some tools related to the DataObj class
+from packages.cleaning import data_object
+
+
+def get_dataobj_converted(tweet):
+    new_obj = data_object.DataObj()
+    new_obj.unique_id = tweet.id_str
+    new_obj.name = tweet.user.name
+    new_obj.text = tweet.text
+    new_obj.coordinates = tweet.coordinates
+    new_obj.place = tweet.place
+    return new_obj
+
 
 def siminet_compressed_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
     txt = ""
@@ -7,6 +19,7 @@ def siminet_compressed_to_txt(siminet, row_sep:str = "--", col_sep:str = "||"):
         confidence = str(row[1])
         txt += f"{word}{col_sep}{confidence}{row_sep}"
     return txt
+
 
 def txt_to_compressed_siminet(txt, row_sep:str = "--", col_sep:str = "||"):
     siminet = []
