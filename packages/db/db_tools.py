@@ -2,6 +2,7 @@ from random import randint
 from neo4j import GraphDatabase as GDB
 from packages.cleaning.data_object import DataObj
 from packages.cleaning import data_object_tools
+from credentials import neo4j_uri, neo4j_user_name, neo4j_password
 
 
 
@@ -16,9 +17,9 @@ class GDBCom():
         self.verbosity = verbosity
 
     def setup(self):
-        uri             = "bolt://localhost:7687"
-        user_name        = "neo4j"
-        password        = "morphius4j"
+        uri = neo4j_uri
+        user_name = neo4j_user_name
+        password = neo4j_password
         self.graphDB_Driver  = GDB.driver(uri, auth=(user_name, password))
 
     def print_progress(self, _msg):
