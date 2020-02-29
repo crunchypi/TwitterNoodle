@@ -1,7 +1,7 @@
 import tweepy
 import pickle
 from packages.feed.custom_stream_listener import CustomStreamListener as CSL
-from packages.feed import credentials
+import credentials
 
 class Feed():
 
