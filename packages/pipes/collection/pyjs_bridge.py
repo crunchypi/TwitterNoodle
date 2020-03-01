@@ -3,6 +3,7 @@ import websockets
 
 from packages.pipes.collection.base import PipeBase
 from packages.similarity.process_tools import ProcessSimilarity
+from credentials import pyjs_bridge_ip, pyjs_bridge_port
 
 
 class PyJSBridgePipe(PipeBase):
@@ -33,7 +34,11 @@ class PyJSBridgePipe(PipeBase):
         print("pipe")
 
     def start(self):
-        start_server = websockets.serve(self.serve_loop, "127.0.0.1", 5678)
+        start_server = websockets.serve(
+            self.serve_loop, 
+            pyjs_bridge_ip, 
+            pyjs_bridge_port
+        )
         asyncio.get_event_loop().run_until_complete(start_server)
         try:
             asyncio.get_event_loop().run_forever()

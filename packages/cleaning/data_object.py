@@ -1,6 +1,6 @@
 class DataObj():
 
-    alphatags = []
+    alphatags = [] # // @ consider removing..
     def __init__(self):
         self.unique_id = None
         self.name = None
