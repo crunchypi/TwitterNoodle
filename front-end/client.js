@@ -3,6 +3,11 @@ function startSocket() {
     var ws = new WebSocket("ws://127.0.0.1:5678/")
 
     ws.onmessage = function (event) {
-        data.push( -1 * (float(event.data))) // Negatives will wick up in the graph.
+        let newData = event.data;
+        // Negatives will wick up in graph.
+        newData = -1 * (float(newData)); 
+        newData *= dataMultiplier;
+        // Pass for further processing.
+        data.push(newData)
     };
 }
