@@ -45,8 +45,9 @@ class PipeBase():
             self.cond_print(oldest_data)
             if oldest_data is not None: # Can be done
                 processed_data = self.__process_task(oldest_data)
-                # @ Have this as optional
-                self.output.append(processed_data)
+                # // Optional pass
+                if processed_data: self.output.append(processed_data)
+                
             else:
                 #self.cond_print("PipeBase/process: Recieved Nonetype data")
                 pass # // deb
