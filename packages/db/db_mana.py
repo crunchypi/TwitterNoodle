@@ -2,7 +2,7 @@ from packages.db.db_tools import GDBCom
 from packages.similarity.process_tools import ProcessSimilarity
 
 from packages.cleaning import data_object_tools # @ deb
-from packages.misc.custom_thread import CustomThread
+# from packages.misc.custom_thread import CustomThread @ Deprecated 020320
 
 # // @ add global siminet degree
 
@@ -44,9 +44,9 @@ class DBMana():
 
         self.clockwork_current_node = None
 
-        # // Event-loop is looped and async.
-        self.event_loop_enabled = True
-        self.event_loop_thread = CustomThread(_task=self.event_loop, _is_looped=False)
+        # // Event-loop is looped and async. @ Deprecated 020320
+        # self.event_loop_enabled = True
+        # self.event_loop_thread = CustomThread(_task=self.event_loop, _is_looped=False)
 
 
     def setup_db_tools(self, verbosity: bool = False) -> None:
@@ -56,13 +56,13 @@ class DBMana():
         self.gdbcom.setup()
 
 
-    def setup_simi_tools(self, load_model: bool = True, verbosity: bool = False) -> None:
+    def setup_simi_tools(self, verbosity: bool = False) -> None:
         """ Setting up similarity processing tools. Having its own method
             such that model load is easier to control (loading it every time
             a test occurs can be time consuming).
         """
         self.simitool = ProcessSimilarity(verbosity=verbosity)
-        if load_model: self.simitool.load_model("glove-twitter-25")
+        #if load_model: self.simitool.load_model("glove-twitter-25") # @ Deprecated 020320
 
 
     def cond_print(self, content: str) -> None:
@@ -362,7 +362,7 @@ class DBMana():
         return rec_task(ring_root)
 
 
-    def event_loop(self) -> None:
+    def event_loop(self) -> None: # @ change docstring
         """ Alternating between autoinsertion, clockwork_sort, query and check_queue_drop.
             Created to be self-sufficient main loop of this class; run once and
             let it be.
@@ -371,7 +371,7 @@ class DBMana():
         
         sort_generator = self.clockwork_traversal(sort=True, continuous=False)
    
-        while self.event_loop_enabled: 
+        while True: 
             self.check_queue_drop()
             # // Insert new
             if self.dataobj_queue:
@@ -379,7 +379,7 @@ class DBMana():
                 new_node = self.dataobj_queue.pop(0)
                 self.autoinsertion(new_node=new_node)
                 self.cond_print("event_loop: Ended autoinsertion")
-                print(f"Added '{new_node.name}'")
+                # @ print(f"Added '{new_node.name}'")
             try:
                 self.cond_print("event_loop: Started Sort")
                 next(sort_generator)
@@ -388,13 +388,15 @@ class DBMana():
                 self.cond_print("event_loop: Restarted Sort")
                 sort_generator = self.clockwork_traversal(sort=True, continuous=False)
 
+            yield # // Return control to caller.
 
-    def start_event_loop(self) -> None:
-        self.cond_print("Starting async event loop")
-        self.event_loop_thread.run()
+    # @ Deprecated 020320
+    # def start_event_loop(self) -> None:
+    #     self.cond_print("Starting async event loop")
+    #     self.event_loop_thread.run()
         
-
-    def stop_event_loop(self) -> None:
-        print("Stopping event loop")
-        self.event_loop_thread.stop()
-        self.event_loop_enabled = False
+    # @ Deprecated 020320
+    # def stop_event_loop(self) -> None:
+    #     print("Stopping event loop")
+    #     self.event_loop_thread.stop()
+    #     self.event_loop_enabled = False
