@@ -1,3 +1,15 @@
+""" This file contains prefabs for the system.
+        - Pipes
+        - Pipelines (combinations of pipes)
+    Pipes do different processes, such as cleaning 
+    dataobjects(see packages.cleaning.data_object)
+    
+    Note: This file has a lot of repetition by design,
+    this is meant to be a very simple top-level access
+    point of the project. Only accessor as of now (020329)
+    is main.py
+"""
+
 import threading
 
 from packages.pipes.collection.cleaning import CleaningPipe
@@ -5,7 +17,7 @@ from packages.pipes.collection.simi import SimiPipe
 from packages.pipes.collection.feed_disk import FeedFromDiskPipe
 from packages.pipes.collection.feed_api import FeedFromAPIPipe
 from packages.pipes.collection.pyjs_bridge import PyJSBridgePipe
-
+from packages.pipes.collection.database import DBPipe
 
 
 
@@ -62,6 +74,42 @@ def get_pipe_pyjs_bridge(input:list, output:list, simitool, query:list = []):
         refreshed_data=True,
         verbosity=False
     )
+
+def get_pipe_db(input:list, new_root_ring:bool=True):
+    return DBPipe(
+        input=input,
+        new_root_ring=new_root_ring,
+        threshold_input=200,
+        threshold_output=200,
+        verbosity=False
+    ) 
+
+
+def get_pipeline_api_cln_simi_db(track_api:list = [" "]):
+    def procedure():
+        tweets = []
+        cleaned_dataobjects = []
+        data_objects_simi = []
+
+        pipe_tweets= get_pipe_feed_from_api(track=track_api, output=tweets)
+        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
+        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
+        pipe_db = get_pipe_db(input=data_objects_simi)
+
+        # // Task for processing pipes in continious loop.
+        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi, pipe_db]
+        def process():
+            while True:
+                for pipe in processing_pipes:
+                    pipe.process()
+
+        # // Define and start thread.
+        processing_thread = threading.Thread(target=process)
+        processing_thread.start()
+
+    return procedure
+
+
 
 def get_pipeline_dsk_cln_simi_js(
         monitor_hook = lambda: None,
