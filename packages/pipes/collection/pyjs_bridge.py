@@ -17,21 +17,19 @@ class PyJSBridgePipe(PipeBase):
                 refreshed_data:bool, 
                 verbosity:bool) -> None:
 
-        self.simitool = simitool
-        self.output = output
-        self.query_queued = query
-        self.query_ready = []
+        self.simitool = simitool # // Borrowed from outside for optimisation.
+        self.query_queued = query # // For queries waiting to be transformed.
+        self.query_ready = []   # // Transformed queries (siminets)
 
         super(PyJSBridgePipe, self).__init__(
                 input=input,
-                output=self.output,
+                output=output,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
                 refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
-        print("pipe")
 
     def start(self):
         start_server = websockets.serve(
