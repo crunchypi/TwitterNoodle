@@ -12,10 +12,10 @@ from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 class BasicCleaner():
 
-""" This is a static class meant to contain 'cleaning' methods.
-    'Cleaning' in this context refers to preparing various strings
-    for ML processing.
-"""
+    """ This is a static class meant to contain 'cleaning' methods.
+        'Cleaning' in this context refers to preparing various strings
+        for ML processing.
+    """
 
     @staticmethod
     def print_comparison(data_obj, text_raw:str) -> None:

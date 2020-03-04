@@ -9,6 +9,19 @@ from packages.cleaning import custom_stopwords
 
 class GenerateDataset():
 
+    """ This class is used to collect tweet datasets. This 
+        naturally means that credentials.py must have the 
+        correct API keys. 
+
+        Compression is on by default, and memory is cleared
+        on each save, so collection over long periods of 
+        time should be safe, as long as the configuration is
+        ok, though 'testing the waters' is highly reccommended.
+
+        An example is provided at the end of this module,
+        the function is outside of the class and is named
+        'example'.
+    """
     
     def __init__(self,  
                 runtime_total:int=10, 
@@ -41,7 +54,8 @@ class GenerateDataset():
         self.compression_enabled = compression
 
 
-    def print_progress_bar(self, current ,max, bar_size = 20, descriptor="", leave_last=True):
+    def print_progress_bar(self, current ,max, bar_size = 20, 
+                            descriptor="", leave_last=True) -> None:
         "A rudimentary progress bar, only meant for testing"
         # // Guard divide by zero
         percent = 0
@@ -59,7 +73,7 @@ class GenerateDataset():
         else: print(f"{descriptor} {bar_str}", end="\r")
 
 
-    def validate_session(self):
+    def validate_session(self) -> bool:
         "Checks if all necessary(for collection) properties are set."
         if self.runtime_total is None: return False
         if self.runtime_between_slices is None: return False
@@ -79,7 +93,7 @@ class GenerateDataset():
         return self.runtime_total - (now - self.timestamp_start)
 
 
-    def run_collector(self):
+    def run_collector(self) -> None:
         """ Collects tweets and saves according to how the instance
             of this class was set up.
         """
@@ -127,7 +141,10 @@ class GenerateDataset():
 
 
 
-def example(path="../DataCollection/", time_total=10, time_between_slices=5, track=None ):
+def example(path:str = "../DataCollection/", 
+            time_total:int = 10, 
+            time_between_slices:int = 5, 
+            track:list = ['cats']):
     """ Example for how Generate_Dataset can be ran.
     """
     # // Setup and run.
