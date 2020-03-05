@@ -22,7 +22,7 @@ class FeedFromDiskPipe(PipeBase):
         )
 
     def fetch_input(self, filepath:str):
-        feed = feed = Feed()
+        feed = Feed()
         return feed.disk_get_tweet_queue(filepath)
 
     def __task(self, element):
