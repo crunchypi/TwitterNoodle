@@ -79,37 +79,6 @@ class DBMana():
         if self.verbosity: print(content)
 
 
-    # // Deprecated 050320
-    # def queue_dataobj(self, dataobj) -> None:
-    #     "Simply queue a new data object for processing."
-    #     self.dataobj_queue.append(dataobj)
-
-
-    # // Deprecated 050320
-    # def check_queue_drop(self) -> None:
-    #     """ Check dataobj_queue status.
-    #         - If the length is reaching a soft limit, give a warn and 
-    #           signal overload.
-    #         - If the length is reaching a hard limit, give a warn,
-    #             signal overload and drop.
-    #         - If witin limits, signal green light.
-    #     """
-    #     # // Unnecessary re-definitions for better readability.
-    #     current = len(self.dataobj_queue)
-    #     hard = self.dataobj_queue_max_threshold_hard
-    #     soft = self.dataobj_queue_max_threshold_soft
-
-    #     if current >= hard:
-    #         self.cond_print("check_queue_drop: hard threshold reached. Dropping obj.")
-    #         self.dataobj_queue_overloaded = True
-    #         self.dataobj_queue.pop(0) # @ consider doing this multiple times.
-    #     elif current >= soft and current <= hard:
-    #         self.cond_print("check_queue_drop: soft threshold reached")
-    #         self.dataobj_queue_overloaded = True
-    #     else:
-    #         self.dataobj_queue_overloaded = False
-        
-
     def create_initial_ring(self, dataobjects: list) -> None:
         """ Creates the initial/main root ring in the db structure.
             Clears db before doing this.
