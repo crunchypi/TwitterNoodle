@@ -2,13 +2,26 @@ from packages.db.db_tools import GDBCom
 from packages.similarity.process_tools import ProcessSimilarity
 
 from packages.cleaning import data_object_tools # @ deb
-# from packages.misc.custom_thread import CustomThread @ Deprecated 020320
 
 # // @ add global siminet degree
 
 class DBMana():
 
+    """ This class is mainly used for inserting 
+        DataObj(see packages.cleaning.data_object) 
+        into the neo4j db with the tools located in
+        packages.db.db_tools.
 
+        Another main functionality of this class is
+        to sort the neo4j database.
+
+        These tools require DataObjects with a
+        siminet(packages.similarity.process_tools),
+        but is not responsible for creating them.
+
+        Another functionality of this class is to
+        send queries to the database.
+    """
 
     def __init__(self, 
                  verbosity: bool = False, 
@@ -17,7 +30,6 @@ class DBMana():
                  conservative_swaps: bool = True) -> None:
         """ Setup for this class where:
                 - Verbosity for this class(verbosity_mana(ger)) is set.
-                - Similarity tools are set. 
                 - Default ringsize of db rings is set.
                 - static_ringsize is set. True means that all rings must be at a fixed
                     size at all times, even if that means dropping some new nodes.
@@ -44,13 +56,10 @@ class DBMana():
 
         self.clockwork_current_node = None
 
-        # // Event-loop is looped and async. @ Deprecated 020320
-        # self.event_loop_enabled = True
-        # self.event_loop_thread = CustomThread(_task=self.event_loop, _is_looped=False)
-
 
     def setup_db_tools(self, verbosity: bool = False) -> None:
-        """ Setting up db tools.
+        """ Setting up db tools, this is necessary for this
+            entire class to function.
         """
         self.gdbcom = GDBCom(verbosity=verbosity)
         self.gdbcom.setup()
@@ -70,33 +79,35 @@ class DBMana():
         if self.verbosity: print(content)
 
 
-    def queue_dataobj(self, dataobj) -> None:
-        "Simply queue a new data object for processing."
-        self.dataobj_queue.append(dataobj)
+    # // Deprecated 050320
+    # def queue_dataobj(self, dataobj) -> None:
+    #     "Simply queue a new data object for processing."
+    #     self.dataobj_queue.append(dataobj)
 
 
-    def check_queue_drop(self) -> None:
-        """ Check dataobj_queue status.
-            - If the length is reaching a soft limit, give a warn and 
-              signal overload.
-            - If the length is reaching a hard limit, give a warn,
-                signal overload and drop.
-            - If witin limits, signal green light.
-        """
-        # // Unnecessary re-definitions for better readability.
-        current = len(self.dataobj_queue)
-        hard = self.dataobj_queue_max_threshold_hard
-        soft = self.dataobj_queue_max_threshold_soft
+    # // Deprecated 050320
+    # def check_queue_drop(self) -> None:
+    #     """ Check dataobj_queue status.
+    #         - If the length is reaching a soft limit, give a warn and 
+    #           signal overload.
+    #         - If the length is reaching a hard limit, give a warn,
+    #             signal overload and drop.
+    #         - If witin limits, signal green light.
+    #     """
+    #     # // Unnecessary re-definitions for better readability.
+    #     current = len(self.dataobj_queue)
+    #     hard = self.dataobj_queue_max_threshold_hard
+    #     soft = self.dataobj_queue_max_threshold_soft
 
-        if current >= hard:
-            self.cond_print("check_queue_drop: hard threshold reached. Dropping obj.")
-            self.dataobj_queue_overloaded = True
-            self.dataobj_queue.pop(0) # @ consider doing this multiple times.
-        elif current >= soft and current <= hard:
-            self.cond_print("check_queue_drop: soft threshold reached")
-            self.dataobj_queue_overloaded = True
-        else:
-            self.dataobj_queue_overloaded = False
+    #     if current >= hard:
+    #         self.cond_print("check_queue_drop: hard threshold reached. Dropping obj.")
+    #         self.dataobj_queue_overloaded = True
+    #         self.dataobj_queue.pop(0) # @ consider doing this multiple times.
+    #     elif current >= soft and current <= hard:
+    #         self.cond_print("check_queue_drop: soft threshold reached")
+    #         self.dataobj_queue_overloaded = True
+    #     else:
+    #         self.dataobj_queue_overloaded = False
         
 
     def create_initial_ring(self, dataobjects: list) -> None:
@@ -109,14 +120,17 @@ class DBMana():
 
 
     def autoinsertion(self, new_node) -> None:
-        """ Inserts new DataObj into db.
-            Note: NEEDS AN INITIAL RING.
-            Creates a siminet for new_node and compares against the siminet
-            of the nodes in rings. This is done recursively such that a new_node
-            is inserted into any level of the db structure, as long as appropriate 
-            matches are made.
+        """ Inserts new DataObj (packages.cleaning.data_object) into db.
 
-            Exceptions: ValueError if no ring root exists in the db structure.
+            Note: DB needs an initial ring, and new DataObj need 
+            siminets (packages.similarity.process_tools).
+            No ring -> ValueError exception.
+            No siminet -> new_node is dropped.
+
+            Siminets of new nodes are checked against the siminets of other 
+            nodes already in the database. Best matches will lead to a 
+            relationship where the new node is inserted 'under' other nodes.
+            This is done recursively. For more information; see the documentation.
         """
 
         def insert(current_ring:list, current_object) -> None:
@@ -170,12 +184,13 @@ class DBMana():
 
         ring_root = self.gdbcom.get_ring_root()
         if not ring_root: raise ValueError("Create ring root before insertion")
+        if not new_node.siminet: return
         insert(ring_root, new_node)
 
 
     def re_introduce_descendants_of(self, dataobj) -> None:
-        """ Detach and delete dataobjects, and re-introduce them
-            into the db structure.
+        """ Detach and delete dataobjects and their descendants, 
+            and re-introduce them into the db structure.
         """
         # // Cache all descendants of dataobj and delete them from db.
         descendants = self.gdbcom.get_descendants(dataobj)
@@ -225,9 +240,9 @@ class DBMana():
             if not continuous: return
 
 
-    def clockwork_sort(self, current) -> None:
+    def clockwork_sort(self, current:list) -> None:
         """ This method takes a ring(including above node), sorts it, and
-            swaps nodes accordingly
+            swaps nodes accordingly. Dedicated caller: clockwork_traversal
         """
         self.cond_print("   STARTING SORT")
         # // Guard empty node.
@@ -269,7 +284,9 @@ class DBMana():
 
 
     def query_auto(self, q_dataobj) -> list:
-
+        """ Queries the database automatically and 
+            returns similar nodes(similar to q_dataobj).
+        """
         ring_root = self.gdbcom.get_ring_root()
         if not ring_root: raise ValueError("No ring root.")
 
@@ -362,11 +379,11 @@ class DBMana():
         return rec_task(ring_root)
 
 
-    def event_loop(self) -> None: # @ change docstring
+    def event_loop(self) -> GeneratorExit:
         """ Alternating between autoinsertion, clockwork_sort, query and check_queue_drop.
             Created to be self-sufficient main loop of this class; run once and
-            let it be.
-            NOTE: Meant to be ran in async (using custom_thread)
+            let it be. Pulls new objects from self.dataobj_queue
+            NOTE: Returns a Generator
         """
         
         sort_generator = self.clockwork_traversal(sort=True, continuous=False)
@@ -390,13 +407,3 @@ class DBMana():
 
             yield # // Return control to caller.
 
-    # @ Deprecated 020320
-    # def start_event_loop(self) -> None:
-    #     self.cond_print("Starting async event loop")
-    #     self.event_loop_thread.run()
-        
-    # @ Deprecated 020320
-    # def stop_event_loop(self) -> None:
-    #     print("Stopping event loop")
-    #     self.event_loop_thread.stop()
-    #     self.event_loop_enabled = False
