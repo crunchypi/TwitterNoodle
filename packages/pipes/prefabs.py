@@ -110,6 +110,30 @@ def get_pipeline_api_cln_simi_db(track_api:list = [" "]):
     return procedure
 
 
+def get_pipeline_dsk_cln_simi_db(filepath:str): # @ Not tested.
+    def procedure():
+        tweets = []
+        cleaned_dataobjects = []
+        data_objects_simi = []
+
+        pipe_tweets = get_pipe_feed_from_disk(filepath=filepath, output=tweets)
+        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
+        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
+        pipe_db = get_pipe_db(input=data_objects_simi)
+
+        # // Task for processing pipes in continious loop.
+        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi, pipe_db]
+        def process():
+            while True:
+                for pipe in processing_pipes:
+                    pipe.process()
+
+        # // Define and start thread.
+        processing_thread = threading.Thread(target=process)
+        processing_thread.start()
+
+    return procedure
+
 
 def get_pipeline_dsk_cln_simi_js(
         monitor_hook = lambda: None,
