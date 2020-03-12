@@ -119,8 +119,7 @@ class DBMana():
                 # // Result might be None.
                 result = self.simitool.get_top_simi_index(
                             new_object=current_object, 
-                            other_objects=current_ring, 
-                            degrees=3
+                            other_objects=current_ring
                         )
                 if result is None:
                     # // No similar objects found
@@ -263,8 +262,7 @@ class DBMana():
             collection = []
             similar_other_index = self.simitool.get_top_simi_index(
                                     new_object=q_dataobj, 
-                                    other_objects=current_ring, 
-                                    degrees=3
+                                    other_objects=current_ring
             )
             if similar_other_index is not None:
                 # // If there exists a similar other
