@@ -409,29 +409,29 @@ class GDBCom():
             execution isn't necessary.
         """
 
-            cmd = ""
-            # // Enumerate old objects for identification later on.
-            for i, obj in enumerate(objs_old):
-                cmd += f"MATCH (objOld{i}) WHERE objOld{i}.unique_id = '{obj.unique_id}'"
+        cmd = ""
+        # // Enumerate old objects for identification later on.
+        for i, obj in enumerate(objs_old):
+            cmd += f"MATCH (objOld{i}) WHERE objOld{i}.unique_id = '{obj.unique_id}'"
 
-            # // Do swaps.
-            for i in range(len(objs_old)):
-                # // Format siminets such that the database can contain them.
-                siminet_formatted = data_object_tools.siminet_to_txt(
-                                        objs_new[i].siminet
-                                    )
-                self.print_progress( # // Status update
-                    f"Que swap: '{objs_new[i].name}' -> node({objs_old[i].name})"
-                )
-                cmd += f"""
-                    SET objOld{i}.unique_id = '{objs_new[i].unique_id}'
-                    SET objOld{i}.name = "{objs_new[i].name}"
-                    SET objOld{i}.text = '{objs_new[i].text}'
-                    SET objOld{i}.siminet = "{siminet_formatted}"
-                """
-            # @ Auto-execute; might use this as an option.
-            self.cache_commands.append(cmd)
-            self.cache_execute(False)
+        # // Do swaps.
+        for i in range(len(objs_old)):
+            # // Format siminets such that the database can contain them.
+            siminet_formatted = data_object_tools.siminet_to_txt(
+                                    objs_new[i].siminet
+                                )
+            self.print_progress( # // Status update
+                f"Que swap: '{objs_new[i].name}' -> node({objs_old[i].name})"
+            )
+            cmd += f"""
+                SET objOld{i}.unique_id = '{objs_new[i].unique_id}'
+                SET objOld{i}.name = "{objs_new[i].name}"
+                SET objOld{i}.text = '{objs_new[i].text}'
+                SET objOld{i}.siminet = "{siminet_formatted}"
+            """
+        # @ Auto-execute; might use this as an option.
+        self.cache_commands.append(cmd)
+        self.cache_execute(False)
 
 
     def get_node_next(self, obj, rel_type: str) -> list:
