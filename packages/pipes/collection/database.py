@@ -69,13 +69,24 @@ class DBPipe(PipeBase):
         # // will lead to a crash.
         root_ring = self.db_mana.gdbcom.get_ring_root()
         if not root_ring: self.start_fresh = True
-        self.db_event_loop = self.db_mana.event_loop()
+        # // Set first sorting generator
+        self.mana_sort_generator = self.db_mana.clockwork_traversal(
+            sort=True,
+            continuous=False
+        )
+
 
 
     def __task(self, item):
         """ Alternates between db insertion and db sorting.
             See class docstring for more information.
         """
+        # // Drop objects with lack of siminet.
+        if not item.siminet:
+            self.cond_print(
+                "DB pipe found item with no siminet. Dropping."
+            )
+            return None
         # // Taking control over output queue from base.
         self.output.append(item)
         # // If starting fresh; wait for initial nodes to collect.
@@ -90,15 +101,17 @@ class DBPipe(PipeBase):
                 )
                 self.start_fresh = False
         else: # // Root ring exists
+            # // Insert new node.
             if self.output:
-                # // Pass data
                 new_obj = self.output.pop()
-                self.db_mana.dataobj_queue.append(new_obj)
-                # // Try next, reset on fail.
-                try:
-                    next(self.db_event_loop)
-                except StopIteration: # // Reboot generator.
-                    self.db_event_loop = self.db_mana.event_loop()
-
+                self.db_mana.autoinsertion(new_node=new_obj)
+            # // Do sorting.
+            try:
+                next(self.mana_sort_generator)
+            except StopIteration: # // Reset generator.
+                self.mana_sort_generator = self.db_mana.clockwork_traversal(
+                    sort=True,
+                    continuous=False
+                )
         return None
 
