@@ -346,31 +346,3 @@ class DBMana():
         return rec_task(ring_root)
 
 
-    def event_loop(self) -> GeneratorExit:
-        """ Alternating between autoinsertion, clockwork_sort, query and check_queue_drop.
-            Created to be self-sufficient main loop of this class; run once and
-            let it be. Pulls new objects from self.dataobj_queue
-            NOTE: Returns a Generator
-        """
-        
-        sort_generator = self.clockwork_traversal(sort=True, continuous=False)
-   
-        while True: 
-            self.check_queue_drop()
-            # // Insert new
-            if self.dataobj_queue:
-                self.cond_print("event_loop: Started autoinsertion")
-                new_node = self.dataobj_queue.pop(0)
-                self.autoinsertion(new_node=new_node)
-                self.cond_print("event_loop: Ended autoinsertion")
-                # @ print(f"Added '{new_node.name}'")
-            try:
-                self.cond_print("event_loop: Started Sort")
-                next(sort_generator)
-                self.cond_print("event_loop: Ended Sort")
-            except StopIteration:
-                self.cond_print("event_loop: Restarted Sort")
-                sort_generator = self.clockwork_traversal(sort=True, continuous=False)
-
-            yield # // Return control to caller.
-
