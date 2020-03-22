@@ -1,0 +1,17 @@
+JDK 8 (AKA 1.8)
+Neo4j 3.5.* (higher might be compatible)
+
+python3 (module installs done with pip3)
+	neo4j
+	tweepy
+ 	gensim
+	textblob
+	websockets 
+
+
+
+Extra:
+	Get stopwords:
+		(using interpreter)
+		>import nltk
+		>nltk.download('stopwords')
