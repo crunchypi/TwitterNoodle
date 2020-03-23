@@ -22,9 +22,9 @@ from packages.pipes.pipeline import Pipeline
 
 
 def get_pipeline_api_cln_simi_db(
-    track_api:list = ["to", "and", "from"],
-    threshold_output:int = 200,
-    verbosity:bool = False
+        api_track:list = ["to", "and", "from"],
+        threshold_output:int = 200,
+        verbosity:bool = False
     ):
     """ Gets a pipeline consisting of;
             - FeedFromAPIPipe
@@ -39,7 +39,7 @@ def get_pipeline_api_cln_simi_db(
         packages.pipes.collection.*
     """
     api_pipe = FeedFromAPIPipe(
-        track=track_api,
+        track=api_track,
         threshold_output=threshold_output,
         verbosity=verbosity
     )
@@ -52,7 +52,7 @@ def get_pipeline_api_cln_simi_db(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=2 # @ make global
+            recursion_level=1 # @ make global
     )
     db_pipe = DBPipe(
         previous_pipe=simi_pipe,
@@ -66,10 +66,9 @@ def get_pipeline_api_cln_simi_db(
 
 
 def get_pipeline_dsk_cln_simi_db(
-    filepath:str,
-    threshold_output:int = 200,
-    verbosity:bool = False
-    
+        filepath:str,
+        threshold_output:int = 200,
+        verbosity:bool = False
     ): # @ Not tested.
     """ Gets a pipeline consisting of;
             - FeedFromAPIPipe
@@ -97,7 +96,7 @@ def get_pipeline_dsk_cln_simi_db(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=2 # @ make global
+            recursion_level=1 # @ make global
     )
     db_pipe = DBPipe(
         previous_pipe=simi_pipe,
@@ -111,10 +110,10 @@ def get_pipeline_dsk_cln_simi_db(
 
 # @ not tested
 def get_pipeline_dsk_cln_simi_js(
-    filepath:str, 
-    initial_query:list,
-    threshold_output:int = 200,
-    verbosity:bool = False
+        filepath:str, 
+        initial_query:list,
+        threshold_output:int = 200,
+        verbosity:bool = False
     ):
     dsk_pipe = FeedFromDiskPipe(
             filepath=filepath,
@@ -130,7 +129,7 @@ def get_pipeline_dsk_cln_simi_js(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=2
+            recursion_level=1
     )
     bridge_pipe = PyJSBridgePipe(
         previous_pipe=simi_pipe,
@@ -144,10 +143,10 @@ def get_pipeline_dsk_cln_simi_js(
 
 
 def get_pipeline_api_cln_simi_js(
-    api_track:list = ["to", "and", "from"], 
-    initial_query:list = ["python"],
-    threshold_output:int = 200,
-    verbosity:bool = False
+        api_track:list = ["to", "and", "from"], 
+        initial_query:list = ["python"],
+        threshold_output:int = 200,
+        verbosity:bool = False
     ):
 
     api_pipe = FeedFromAPIPipe(
@@ -164,7 +163,7 @@ def get_pipeline_api_cln_simi_js(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=2 # @ make global
+            recursion_level=1 # @ make global
     )
     bridge_pipe = PyJSBridgePipe(
         previous_pipe=simi_pipe,
