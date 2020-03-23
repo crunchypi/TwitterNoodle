@@ -23,9 +23,8 @@ class PipeBase():
         the method self.'process'.
     """
 
-    def __init__(self, 
-                input: list,
-                output: list,
+    def __init__(self,
+                previous_pipe, # // Subclass of self.
                 process_task, 
                 threshold_input:int, 
                 threshold_output:int, 
@@ -41,14 +40,22 @@ class PipeBase():
         self.__refreshed_data = refreshed_data
         self.verbosity = verbosity
 
-        self.input = input
-        self.output = output
+        self.previous_pipe = previous_pipe
+        self.output = []
 
 
     def cond_print(self, msg):
         "Conditional printout, based on self.verbosity"
         if self.verbosity: 
             print(msg)
+
+    def clear_overflow(self):
+        "Clears output if it reaches self.__threshold_output"
+        while len(self.output) > self.__threshold_output:
+            self.output.pop(0)
+            self.cond_print(
+                "Length of output list reached, removed oldest item."
+            )
 
 
     def process(self):
@@ -59,13 +66,14 @@ class PipeBase():
                     the processed data will go to self.output list.
                 2 - Return nothing and handle data itself.
         """
-        # // Fetch oldest data from self.input[0].
-        if self.input:
-            oldest_data = self.input.pop(0)
-            self.cond_print(oldest_data)
-            # // Validate not None and process.
-            if oldest_data is not None:
-                processed_data = self.__process_task(oldest_data)
-                # // Optional pass, determined by implementation of subclasses.
-                if processed_data: self.output.append(processed_data)
+        # // Attempt move data.
+        next_data = None
+        if self.previous_pipe:
+            if self.previous_pipe.output:
+                next_data = self.previous_pipe.output.pop(0)
+        processed_data = self.__process_task(next_data)
+        # // Optional pass; output can be controlled by subclass.
+        if processed_data: self.output.append(processed_data)
+
+        self.clear_overflow()
  

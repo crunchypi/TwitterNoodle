@@ -21,8 +21,7 @@ class SimiPipe(PipeBase):
     """
     
     def __init__(self, 
-                input: list,
-                output: list,
+                previous_pipe,
                 threshold_input:int = 200, 
                 threshold_output:int = 200, 
                 refreshed_data:bool = True, 
@@ -35,15 +34,13 @@ class SimiPipe(PipeBase):
             NOTE: Beware; loads a word2vec model.
         """
         super(SimiPipe, self).__init__(
-                input=input,
-                output=output,
+                previous_pipe=previous_pipe,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
                 refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
-
         # // Setup and load tools (model load might take a few seconds).
         self.simitool = ProcessSimilarity(verbosity=verbosity)
         self.simitool.load_model()
@@ -60,6 +57,8 @@ class SimiPipe(PipeBase):
             NOTE: will crash if dataobjects do not have 
                 valid text fields.
         """
+        if not item: return
+        
         if item.text == None:
             raise ValueError("Expected DataObject.text, found None")
         query = item.text.split()

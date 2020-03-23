@@ -1,4 +1,5 @@
 
+import pickle
 from packages.pipes.collection.base import PipeBase
 from packages.feed.tweet_feed import Feed
 
@@ -16,7 +17,6 @@ class FeedFromDiskPipe(PipeBase):
 
     def __init__(self,
                 filepath: str,
-                output: list,
                 threshold_input:int, 
                 threshold_output:int, 
                 refreshed_data:bool, 
@@ -27,14 +27,27 @@ class FeedFromDiskPipe(PipeBase):
         """
 
         super(FeedFromDiskPipe, self).__init__(
-                input=self.fetch_input(filepath),
-                output=output,
+                previous_pipe=None,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
                 refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
+
+        self.unpickle_generator = self.get_unpickle_generator(
+            filepath=filepath
+        )
+
+    def get_unpickle_generator(self, filepath:str):
+        with open(filepath, mode="rb") as file:
+            try:
+                content = pickle.load(file)
+                for item in content:
+                    yield item
+            except EOFError:
+                pass
+
 
     def fetch_input(self, filepath:str) -> list:
         """ Fetches a list of tweepy tweets from path.
@@ -45,5 +58,9 @@ class FeedFromDiskPipe(PipeBase):
         return feed.disk_get_tweet_queue(filepath)
 
     def __task(self, element):
-        " Redundant. Required but not called. "
-        return element
+        " element not used "
+        try:
+            return next(self.unpickle_generator)
+
+        except StopIteration:
+            pass

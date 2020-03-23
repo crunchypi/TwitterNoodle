@@ -18,7 +18,6 @@ class FeedFromAPIPipe(PipeBase):
 
     def __init__(self,
                 track: list,
-                output: list,
                 threshold_input:int, 
                 threshold_output:int, 
                 refreshed_data:bool, 
@@ -28,28 +27,25 @@ class FeedFromAPIPipe(PipeBase):
             for more information.
         """
         super(FeedFromAPIPipe, self).__init__(
-                input=self.set_stream_fetch_input(track),
-                output=output,
+                previous_pipe=None,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
                 refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
+        self.set_stream_fetch_input(track=track)
 
-    def set_stream_fetch_input(self, track):
+    def set_stream_fetch_input(self, track:list) -> None:
         " Sets tweepy stream. See packages.feed for more information. "
-        stream_collection = []
-        feed = feed = Feed()
-        self.listener = feed.live_get_listener(stream_collection)
+        feed = Feed()
+        self.listener = feed.live_get_listener(self.output)
         self.stream = feed.live_get_streamer(self.listener, track)
-        return stream_collection
-        
-
+    
     def __task(self, element):
         " Redundant, will not be called. "
-        return element
+        return None
 
     def __del__(self):
         " Stops stream on garbage collection. "
-        self.stream.disconnect() # // Stop stream
+        self.stream.disconnect()

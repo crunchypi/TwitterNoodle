@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+import threading
 
 from packages.pipes.collection.base import PipeBase
 from packages.similarity.process_tools import ProcessSimilarity
@@ -37,10 +38,8 @@ class PyJSBridgePipe(PipeBase):
     """
 
     def __init__(self,
-                input: list,
-                output: list, # @ Deb
+                previous_pipe,
                 query: list,
-                simitool: ProcessSimilarity,
                 threshold_input:int, 
                 threshold_output:int, 
                 refreshed_data:bool, 
@@ -64,13 +63,8 @@ class PyJSBridgePipe(PipeBase):
                 asyncio.
         """
 
-        self.simitool = simitool # // Borrowed from outside for optimisation.
-        self.query_queued = query # // For queries waiting to be transformed.
-        self.query_ready = []   # // Transformed queries (siminets)
-
         super(PyJSBridgePipe, self).__init__(
-                input=input,
-                output=output,
+                previous_pipe=previous_pipe,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
@@ -78,8 +72,37 @@ class PyJSBridgePipe(PipeBase):
                 verbosity=verbosity
         )
 
+        self.query_queued = query # // For queries waiting to be transformed.
+        self.query_ready = []   # // Transformed queries (siminets)
+        self.set_simitool()
+        self.foreign_data_queue = []
+        self.thread_active = False
+
+
+    def set_simitool(self):
+        prev_pipe = self.previous_pipe
+        # // Going through stack.
+        while True:
+            # // Going through properties.
+            for key in prev_pipe.__dict__.keys():
+                inst = prev_pipe.__dict__.get(key)
+                # // Find ProcessSimilarity and check for w2v model.
+                if isinstance(inst, (ProcessSimilarity)):
+                    if inst.w2v_model:
+                        self.simitool = inst
+                        return
+            # // Update.
+            if prev_pipe.previous_pipe:
+                prev_pipe = prev_pipe.previous_pipe
+        # // If no simitool was found, make one.
+        if not self.simitool:
+            self.simitool = ProcessSimilarity()
+            self.simitool.load_model()
+
+
     def start(self):
         "Starts asyncio and websockets"
+        asyncio.set_event_loop(asyncio.new_event_loop())
         start_server = websockets.serve(
             self.serve_loop, 
             pyjs_bridge_ip, 
@@ -101,7 +124,6 @@ class PyJSBridgePipe(PipeBase):
         while True:
             self.check_query_update() # // Check if query is to be updated.
             next_data = self.calc_next_score()
-            #print(next_data) # @ Deb
             if next_data != None: # // Only send if there is some data.
                 await websocket.send(str(next_data))
             await asyncio.sleep(0.1)
@@ -136,9 +158,9 @@ class PyJSBridgePipe(PipeBase):
             the similarity between query and new dataobjects.
             Pushes new scores to self.output.
         """
-        if self.input:
+        if self.foreign_data_queue:
             if self.query_ready:
-                last_obj = self.input.pop()
+                last_obj = self.foreign_data_queue.pop()
                 simi_score = self.simitool.get_score_compressed_siminet(
                     new=last_obj.siminet,
                     other=self.query_ready
@@ -150,7 +172,13 @@ class PyJSBridgePipe(PipeBase):
 
     def __task(self, element):
         "Redundant but required"
-        return element
+        if not self.thread_active:
+            network_thread = threading.Thread(target=self.start)
+            network_thread.start()
+            self.thread_active = True
+        if element:
+            self.foreign_data_queue.append(element)
+        return None
 
 
     def __del__(self):

@@ -25,25 +25,24 @@ class DBPipe(PipeBase):
     """
 
     def __init__(self, 
-                input: list,
-                new_root_ring: bool,
+                previous_pipe,
+                start_fresh,
                 threshold_input:int = 200, 
                 threshold_output:int = 200, 
                 verbosity:bool = False) -> None:
         """ Initialises with required data; see docstring
             of this- and base class for more info.
 
-            Note: new_root_ring=True clears the db.
-            if this is set to False, and there is 
+            Note: start_fresh=True clears the db.
+            If this is set to False, and there is 
             no root_ring, then an override will occur
             which defaults to True.
         """
-        self.start_fresh = new_root_ring
+        self.start_fresh = start_fresh
         self.setup()
 
         super(DBPipe, self).__init__(
-                input=input,
-                output=[],
+                previous_pipe=previous_pipe,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
@@ -81,19 +80,20 @@ class DBPipe(PipeBase):
         """ Alternates between db insertion and db sorting.
             See class docstring for more information.
         """
-        # // Drop objects with lack of siminet.
-        if not item.siminet:
-            self.cond_print(
-                "DB pipe found item with no siminet. Dropping."
-            )
-            return None
-        # // Taking control over output queue from base.
-        self.output.append(item)
+        if item:
+            # // Drop objects with lack of siminet.
+            if not item.siminet:
+                self.cond_print(
+                    "DB pipe found item with no siminet. Dropping."
+                )
+                return None
+            # // Taking control over output queue from base.
+            self.output.append(item)
         # // If starting fresh; wait for initial nodes to collect.
         if self.start_fresh:
             if len(self.output) > 3: # @ Config
                 initial_ring = []
-                for x in range(3):
+                for _ in range(3):
                     obj = self.output.pop()
                     initial_ring.append(obj)
                 self.db_mana.create_initial_ring(

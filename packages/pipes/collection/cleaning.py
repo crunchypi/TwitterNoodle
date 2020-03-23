@@ -16,8 +16,7 @@ class CleaningPipe(PipeBase):
     """
 
     def __init__(self, 
-                input: list,
-                output: list,
+                previous_pipe,
                 threshold_input:int = 200, 
                 threshold_output:int = 200, 
                 refreshed_data:bool = True, 
@@ -29,8 +28,7 @@ class CleaningPipe(PipeBase):
         """
 
         super(CleaningPipe, self).__init__(
-                input=input,
-                output=output,
+                previous_pipe=previous_pipe,
                 process_task=self.__task, 
                 threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
@@ -48,8 +46,9 @@ class CleaningPipe(PipeBase):
             that cleaned dataobject, which is pushed
             by the baseclass to self.output list.
         """
-        sentiment_range = [-1.0,1.0]
-        new_data_obj = data_object_tools.convert_tweet2dataobj(item)
-        BasicCleaner.autocleaner(new_data_obj, sentiment_range, self.verbosity)
-        return new_data_obj
+        if item:
+            sentiment_range = [-1.0,1.0]
+            new_data_obj = data_object_tools.convert_tweet2dataobj(item)
+            BasicCleaner.autocleaner(new_data_obj, sentiment_range, self.verbosity)
+            return new_data_obj
 

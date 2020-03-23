@@ -18,10 +18,10 @@ from packages.pipes.collection.feed_api import FeedFromAPIPipe
 from packages.pipes.collection.pyjs_bridge import PyJSBridgePipe
 from packages.pipes.collection.database import DBPipe
 
+from packages.pipes.pipeline import Pipeline
 
 
-
-def get_pipe_feed_from_disk(filepath:str, output:list):
+def get_pipe_feed_from_disk(filepath:str):
     """ Get an instance of 'FeedFromDiskPipe'
         with some general values. Requires a
         filepath to a dataset (pickled list of 
@@ -29,29 +29,27 @@ def get_pipe_feed_from_disk(filepath:str, output:list):
     """
     return FeedFromDiskPipe(
             filepath=filepath,
-            output=output, 
             threshold_input=200, 
             threshold_output=200, 
             refreshed_data=False, 
             verbosity=False
     )
 
-def get_pipe_cleaning(input:list, output:list):
+def get_pipe_cleaning(previous_pipe):
     """ Get an instance of 'CleaningPipe' with
         some general values. Required an input
         and output list. For more info; see
         packages.pipes.collection.cleaning.
     """
     return CleaningPipe(
-            input=input,
-            output=output, 
+            previous_pipe=previous_pipe,
             threshold_input=200, 
             threshold_output=200, 
             refreshed_data=False, 
             verbosity=False
     )
 
-def get_pipe_simi(input:list, output:list):
+def get_pipe_simi(previous_pipe, recursion_level:int):
     """ Get an instance of 'SimiPipe' with
         some general values. Requires input
         and output list. 
@@ -61,16 +59,15 @@ def get_pipe_simi(input:list, output:list):
         see packages.pipes.collection.simi.
     """
     return SimiPipe(
-            input=input,
-            output=output,
+            previous_pipe=previous_pipe,
             threshold_input=200, 
             threshold_output=200, 
             refreshed_data=False, 
             verbosity=False,
-            recursion_level=1
+            recursion_level=recursion_level
     )
 
-def get_pipe_feed_from_api(track:list, output:list):
+def get_pipe_feed_from_api(track:list):
     """ Get an instance of 'FeedFromAPIPipe' with
         some general values. Requires a 'track' list
         (of strings) which tells the Twitter API
@@ -80,14 +77,13 @@ def get_pipe_feed_from_api(track:list, output:list):
     """
     return FeedFromAPIPipe(
         track=track,
-        output=output,
         threshold_input=200,
         threshold_output=200,
         refreshed_data=True,
         verbosity=False
     )
 
-def get_pipe_pyjs_bridge(input:list, output:list, simitool, query:list = []):
+def get_pipe_pyjs_bridge(previous_pipe, query:list = []):
     """ Get an instance of 'PyJSBridgePipe' with some general values.
         Requires an input and output list, and a simitool with a loaded 
         word2vec model (reccommended to borrow one from the pipe 
@@ -105,17 +101,15 @@ def get_pipe_pyjs_bridge(input:list, output:list, simitool, query:list = []):
             - get_pipeline_api_cln_simi_js() (found in this file).
     """
     return PyJSBridgePipe(
-        input=input,
-        output=output,
+        previous_pipe=previous_pipe,
         query=query,
-        simitool=simitool,
         threshold_input=200,
         threshold_output=200,
         refreshed_data=True,
         verbosity=False
     )
 
-def get_pipe_db(input:list, new_root_ring:bool=True):
+def get_pipe_db(previous_pipe, start_fresh:bool=True):
     """ Get an instance of DBPipe with some general
         values. Requires an input list(expecting
         dataobjects with siminets) and an indicator
@@ -129,15 +123,15 @@ def get_pipe_db(input:list, new_root_ring:bool=True):
             - DB tools (packages.db.*).
     """
     return DBPipe(
-        input=input,
-        new_root_ring=new_root_ring,
+        previous_pipe=previous_pipe,
+        start_fresh=start_fresh,
         threshold_input=200,
         threshold_output=200,
         verbosity=False
     ) 
 
 
-def get_pipeline_api_cln_simi_db(track_api:list = [" "]):
+def get_pipeline_api_cln_simi_db(track_api:list = ["to", "and", "from"]):
     """ Gets a pipeline consisting of;
             - FeedFromAPIPipe
             - CleaningPipe
@@ -150,29 +144,23 @@ def get_pipeline_api_cln_simi_db(track_api:list = [" "]):
         For more information, see;
         packages.pipes.collection.*
     """
-    def procedure():
-        tweets = []
-        cleaned_dataobjects = []
-        data_objects_simi = []
-
-        # // Setup pipes and tie them together.
-        pipe_tweets= get_pipe_feed_from_api(track=track_api, output=tweets)
-        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
-        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
-        pipe_db = get_pipe_db(input=data_objects_simi)
-
-        # // Task for processing pipes in continious loop.
-        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi, pipe_db]
-        def process():
-            while True:
-                for pipe in processing_pipes:
-                    pipe.process()
-
-        # // Define and start thread.
-        processing_thread = threading.Thread(target=process)
-        processing_thread.start()
-
-    return procedure
+    api_pipe = get_pipe_feed_from_api(
+        track=track_api
+    )
+    cln_pipe = get_pipe_cleaning(
+        previous_pipe=api_pipe
+    )
+    simi_pipe = get_pipe_simi(
+        previous_pipe=cln_pipe,
+        recursion_level=1
+    )
+    db_pipe = get_pipe_db(
+        previous_pipe=simi_pipe,
+        start_fresh=True
+    )
+    return Pipeline(
+        pipes=[api_pipe, cln_pipe, simi_pipe, db_pipe]
+    )
 
 
 def get_pipeline_dsk_cln_simi_db(filepath:str): # @ Not tested.
@@ -188,163 +176,65 @@ def get_pipeline_dsk_cln_simi_db(filepath:str): # @ Not tested.
         For more information, see;
         packages.pipes.collection.*
     """
-    def procedure():
-        tweets = []
-        cleaned_dataobjects = []
-        data_objects_simi = []
+    dsk_pipe = get_pipe_feed_from_disk(
+        filepath=filepath
+    )
+    cln_pipe = get_pipe_cleaning(
+        previous_pipe=dsk_pipe
+    )
+    simi_pipe = get_pipe_simi(
+        previous_pipe=cln_pipe,
+        recursion_level=1
+    )
+    db_pipe = get_pipe_db(
+        previous_pipe=simi_pipe,
+        start_fresh=True
+    )
+    return Pipeline(
+        pipes=[dsk_pipe, cln_pipe, simi_pipe, db_pipe]
+    )
 
-        # // Setup pipes and tie them together.
-        pipe_tweets = get_pipe_feed_from_disk(filepath=filepath, output=tweets)
-        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
-        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
-        pipe_db = get_pipe_db(input=data_objects_simi)
-
-        # // Task for processing pipes in continious loop.
-        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi, pipe_db]
-        def process():
-            while True:
-                for pipe in processing_pipes:
-                    pipe.process()
-
-        # // Define and start thread.
-        processing_thread = threading.Thread(target=process)
-        processing_thread.start()
-
-    return procedure
-
-
-def get_pipeline_dsk_cln_simi_js(
-        monitor_hook = lambda: None,
-        filepath:str = "../DataCollection/191120-21_34_19--191120-21_34_28", 
-        ):
-    """ Gets a pipeline consisting of;
-            - FeedFromDiskPipe
-            - CleaningPipe
-            - SimiPipe
-            - PyJSBridgePipe
-        The return is a function(closure) which
-        uses two threads:
-            1 - For processing pipes (excluding PyJSBridge).
-            2 - For PyJSBridge (also uses asyncio).
-        For more information, see;
-        packages.pipes.collection.*
-    """
-    if not callable(monitor_hook): raise ValueError("Expected function.")
-    def procedure(): 
-        tweets = [] # // Collecting tweets
-        cleaned_dataobjects = [] # // Cleaned dataobjects
-        data_objects_simi = [] # // Dataobjects with siminets
-        scores = []
-
-        # // Setup pipes and tie them together.
-        pipe_tweets = get_pipe_feed_from_disk(filepath=filepath, output=tweets)
-        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
-        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
-        pipe_js = get_pipe_pyjs_bridge(
-            query=["cat", "car", "home"], 
-            simitool=pipe_simi.simitool,
-            input=data_objects_simi,
-            output=scores
-        )
-
-        # // Task for processing regular pipes.
-        # // Excluding pipe_js because it has to be ran on a sep thread.
-        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi]
-        def process():
-            while True:
-                for pipe in processing_pipes:
-                    pipe.process()
-
-        processing_thread = threading.Thread(target=process)
-        monitor_thread = threading.Thread(target=monitor_hook)
-
-        try:
-            processing_thread.start()   # Thread for pipeline.
-            monitor_thread.start()      # Thread for monitor hook.
-            pipe_js.start()             # Thread for network.
-        except KeyboardInterrupt:
-            processing_thread.stop()
-            monitor_thread.stop()
-            pipe_js.stop()
-
-    return procedure
+# @ not tested
+def get_pipeline_dsk_cln_simi_js(filepath:str, initial_query:list):
+    dsk_pipe = get_pipe_feed_from_disk(
+        filepath=filepath
+    )
+    cln_pipe = get_pipe_cleaning(
+        previous_pipe=dsk_pipe
+    )
+    simi_pipe = get_pipe_simi(
+        previous_pipe=cln_pipe,
+        recursion_level=1
+    )
+    bridge_pipe = get_pipe_pyjs_bridge(
+        previous_pipe=simi_pipe,
+        query=initial_query
+    )
+    return Pipeline(
+        pipes=[dsk_pipe, cln_pipe, simi_pipe, bridge_pipe]
+    )
 
 
 def get_pipeline_api_cln_simi_js(
-        monitor_hook = lambda: None,
-        track_api:list = [" "], 
-        track_incident:list = [" "]
-        ):
-    """ Gets a pipeline consisting of;
-            - FeedFromAPIPipe
-            - CleaningPipe
-            - SimiPipe
-            - PyJSBridgePipe
-        The return is a function(closure) which
-        uses three threads:
-            1 - API.
-            2 - For processing pipes (excluding PyJSBridge).
-            3 - PyJSBrdige (which also uses asyncio).
-        For more information, see;
-        packages.pipes.collection.*
-    """
-    if not callable(monitor_hook): raise ValueError("Expected function.")
-    if type(track_api) is not list: raise ValueError("Expected list")
-    if type(track_incident) is not list: raise ValueError("Expected list")
+    apt_track:list = ["to", "and", "from"], 
+    initial_query:list = ["python"]
+    ):
 
-    def validate_tracks(track, errormsg):
-        for item in track:
-            if type(item) is not str: raise ValueError(errormsg)
-
-    validate_tracks(track=track_api, errormsg="Found non-alpha in 'track_api'")
-    validate_tracks(track=track_incident, errormsg="Found non-alpha in 'track_incident'")
-
-    def procedure(): 
-        tweets = [] # // Collecting tweets
-        cleaned_dataobjects = [] # // Cleaned dataobjects
-        data_objects_simi = [] # // Dataobjects with siminets
-        scores = []
-
-        # // Setup pipes and tie them together.
-        pipe_tweets = get_pipe_feed_from_api(track=track_api, output=tweets)
-        pipe_cleaned = get_pipe_cleaning(input=tweets, output=cleaned_dataobjects)
-        pipe_simi = get_pipe_simi(input=cleaned_dataobjects, output=data_objects_simi)
-        pipe_js = get_pipe_pyjs_bridge(
-            query=track_incident, 
-            simitool=pipe_simi.simitool,
-            input=data_objects_simi,
-            output=scores
-        )
-
-        # // Task for processing regular pipes.
-        # // Excluding pipe_js because it has to be ran on a sep thread.
-        processing_pipes = [pipe_tweets, pipe_cleaned, pipe_simi]
-        def process():
-            while True:
-                for pipe in processing_pipes:
-                    pipe.process()
-
-        def monitor():
-            while True:
-                tweets_deb = f"Tweets: {len(tweets)}"
-                cleaned_deb = f"Cleaned: {len(cleaned_dataobjects)}"
-                simi_deb = f"With Simi: {len(data_objects_simi)}"
-                js_deb = f"JS: {len(scores)}"
-                print(f"{tweets_deb} | {cleaned_deb} | {simi_deb} | {js_deb}", end="\r")
-
-        monitor_hook = monitor
-
-        processing_thread = threading.Thread(target=process)
-        monitor_thread = threading.Thread(target=monitor_hook)
-
-        try:
-            processing_thread.start()   # Thread for pipeline.
-            monitor_thread.start()      # Thread for monitor hook.
-            pipe_js.start()             # Thread for network.
-        except KeyboardInterrupt:
-            processing_thread.stop()
-            monitor_thread.stop()
-            pipe_js.stop()
-
-    return procedure
+    api_pipe = get_pipe_feed_from_api(
+        track=apt_track
+    )
+    cln_pipe = get_pipe_cleaning(
+        previous_pipe=api_pipe
+    )
+    simi_pipe = get_pipe_simi(
+        previous_pipe=cln_pipe,
+        recursion_level=1
+    )
+    bridge_pipe = get_pipe_pyjs_bridge(
+        previous_pipe=simi_pipe,
+        query=initial_query
+    )
+    return Pipeline(
+        pipes=[api_pipe, cln_pipe, simi_pipe, bridge_pipe]
+    )
 
