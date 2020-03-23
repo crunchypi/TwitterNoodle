@@ -7,7 +7,7 @@ from packages.pipes.pipeline import Pipeline
 
 
 # prefabs.get_pipeline_api_cln_simi_db(
-#     track_api=["to", "and", "from", "but", "how"]
+#     api_track=["to", "and", "from", "but", "how"]
 # ).run()
 
 
@@ -22,9 +22,9 @@ from packages.pipes.pipeline import Pipeline
 # )
 
 
-# prefabs.get_pipeline_api_cln_simi_js(
-#     apt_track=["to", "and", "from", "but", "how"],
-#     initial_query=["corona", "virus", "death", "sick", "help"]
-# ).run()
+prefabs.get_pipeline_api_cln_simi_js(
+    api_track=["to", "and", "from", "but", "how"],
+    initial_query=["corona", "virus", "death", "sick", "help"]
+).run()
 
 print("end")
