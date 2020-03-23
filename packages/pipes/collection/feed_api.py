@@ -18,9 +18,7 @@ class FeedFromAPIPipe(PipeBase):
 
     def __init__(self,
                 track: list,
-                threshold_input:int, 
                 threshold_output:int, 
-                refreshed_data:bool, 
                 verbosity:bool) -> None:
         """ Setting required values, and passing to super.
             See docstring of this class and the base class
@@ -29,9 +27,7 @@ class FeedFromAPIPipe(PipeBase):
         super(FeedFromAPIPipe, self).__init__(
                 previous_pipe=None,
                 process_task=self.__task, 
-                threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
-                refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
         self.set_stream_fetch_input(track=track)

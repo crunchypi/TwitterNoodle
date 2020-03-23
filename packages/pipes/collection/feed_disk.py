@@ -17,9 +17,7 @@ class FeedFromDiskPipe(PipeBase):
 
     def __init__(self,
                 filepath: str,
-                threshold_input:int, 
-                threshold_output:int, 
-                refreshed_data:bool, 
+                threshold_output:int,
                 verbosity:bool) -> None:
         """ Setting required values, and passing to super.
             See docstring of this class and the base class
@@ -29,9 +27,7 @@ class FeedFromDiskPipe(PipeBase):
         super(FeedFromDiskPipe, self).__init__(
                 previous_pipe=None,
                 process_task=self.__task, 
-                threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
-                refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
 

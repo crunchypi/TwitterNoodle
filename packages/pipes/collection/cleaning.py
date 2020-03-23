@@ -17,9 +17,7 @@ class CleaningPipe(PipeBase):
 
     def __init__(self, 
                 previous_pipe,
-                threshold_input:int = 200, 
-                threshold_output:int = 200, 
-                refreshed_data:bool = True, 
+                threshold_output:int = 200,
                 verbosity:bool = False) -> None:
 
         """ Setting required values, and passing to super.
@@ -30,9 +28,7 @@ class CleaningPipe(PipeBase):
         super(CleaningPipe, self).__init__(
                 previous_pipe=previous_pipe,
                 process_task=self.__task, 
-                threshold_input=threshold_input, 
-                threshold_output=threshold_output, 
-                refreshed_data=refreshed_data, 
+                threshold_output=threshold_output,
                 verbosity=verbosity
         )
 

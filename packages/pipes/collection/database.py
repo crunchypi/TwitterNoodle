@@ -27,8 +27,7 @@ class DBPipe(PipeBase):
     def __init__(self, 
                 previous_pipe,
                 start_fresh,
-                threshold_input:int = 200, 
-                threshold_output:int = 200, 
+                threshold_output:int,
                 verbosity:bool = False) -> None:
         """ Initialises with required data; see docstring
             of this- and base class for more info.
@@ -44,9 +43,7 @@ class DBPipe(PipeBase):
         super(DBPipe, self).__init__(
                 previous_pipe=previous_pipe,
                 process_task=self.__task, 
-                threshold_input=threshold_input, 
-                threshold_output=threshold_output, 
-                refreshed_data=False, 
+                threshold_output=threshold_output,
                 verbosity=verbosity
         )
         

@@ -40,9 +40,7 @@ class PyJSBridgePipe(PipeBase):
     def __init__(self,
                 previous_pipe,
                 query: list,
-                threshold_input:int, 
                 threshold_output:int, 
-                refreshed_data:bool, 
                 verbosity:bool) -> None:
         """ Setting required values, and passing to super.
             See docstring of this class and the base class
@@ -66,9 +64,7 @@ class PyJSBridgePipe(PipeBase):
         super(PyJSBridgePipe, self).__init__(
                 previous_pipe=previous_pipe,
                 process_task=self.__task, 
-                threshold_input=threshold_input, 
                 threshold_output=threshold_output, 
-                refreshed_data=refreshed_data, 
                 verbosity=verbosity
         )
 

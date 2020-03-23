@@ -26,18 +26,14 @@ class PipeBase():
     def __init__(self,
                 previous_pipe, # // Subclass of self.
                 process_task, 
-                threshold_input:int, 
                 threshold_output:int, 
-                refreshed_data:bool, 
                 verbosity:bool) -> None:
         """ Initialise with required properties. See
             class docstring for more information.
         """ 
 
         self.__process_task = process_task
-        self.__threshold_input = threshold_input
         self.__threshold_output = threshold_output
-        self.__refreshed_data = refreshed_data
         self.verbosity = verbosity
 
         self.previous_pipe = previous_pipe
