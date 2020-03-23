@@ -1,13 +1,30 @@
 from packages.pipes import prefabs
+from packages.pipes.pipeline import Pipeline
 
-# pipeline = prefabs.get_pipeline_api_cln_simi_js(
-#     track_api=["to", "and", "from", "but", "how", "i"],
-#     track_incident=["corona", "virus", "outbreak", "death", "sick"]
+# This file is meant to be an example at
+# the time of writing. Uncomment blocks
+# for testing (max one at a time)
+
+
+# prefabs.get_pipeline_api_cln_simi_db(
+#     track_api=["to", "and", "from", "but", "how"]
+# ).run()
+
+
+# prefabs.get_pipeline_dsk_cln_simi_db(
+#     filepath="200322-18_57_08--200322-18_57_08"
+# ).run()
+
+
+# prefabs.get_pipeline_dsk_cln_simi_js(
+#     filepath="200322-18_57_08--200322-18_57_08",
+#     initial_query=["corona", "virus", "death", "sick", "help"]
 # )
 
-pipeline = prefabs.get_pipeline_api_cln_simi_db(track_api=["to", "and", "from", "but", "how", "i"])
-try:
-    pipeline()
-except KeyboardInterrupt:
-    pass
-print("Done")
+
+# prefabs.get_pipeline_api_cln_simi_js(
+#     apt_track=["to", "and", "from", "but", "how"],
+#     initial_query=["corona", "virus", "death", "sick", "help"]
+# ).run()
+
+print("end")
