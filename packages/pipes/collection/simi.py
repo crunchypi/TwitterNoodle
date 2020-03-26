@@ -3,21 +3,21 @@ from packages.similarity.process_tools import ProcessSimilarity
 
 class SimiPipe(PipeBase):
 
-    """ This particular pipe has only one job:
-        Expects an input list where only 
-        dataobjects(packages.cleaning.data_object)
-        are pushed. It is reccommended that
-        the dataobj.text fields are pre-cleaned with
-        packages.cleaning.basic_cleaner.
-
-        DataObj are pulled from input list,
-        get a siminet (see packages.similarity.process_tools)
-        attached to DataObj.siminet field, and are
-        pushed to the output list.
-
-        Note: An instance of this class will automatically
-        create an instance of packages.similarity.process_tools,
-        which will load a word2vec model. This might take some time.
+    """ This particular pipe has a concise job:
+            - Pull dataobj from self.previous_pipe
+            - Add siminet to dataobj
+            - Pass dataobj with siminet to self.output.
+        
+        Parlance:
+            dataobj= An object which contains twitter data.
+                        packages.cleaning.data_object
+            siminet= A tree structure composed of related words.
+                        created at: packages.similarity.process_tools
+            simitool= Instance which creates siminets.
+    
+        NOTE: An init of this class will create an instance
+            of simitool. This will load a w2v model, which 
+            can take a while.
     """
     
     def __init__(self, 
@@ -26,10 +26,10 @@ class SimiPipe(PipeBase):
                 verbosity:bool = False,
                 recursion_level:int = True) -> None:
         """ Setting required values, and passing to super.
-            See docstring of this class and the base class
-            for more information.
+            See docstring of base class for more information.
 
-            NOTE: Beware; loads a word2vec model.
+            NOTE: Beware; loads simitool with a word2vec model.
+            See class docstring for more information.
         """
         super(SimiPipe, self).__init__(
                 previous_pipe=previous_pipe,

@@ -1,12 +1,5 @@
-""" This file contains prefabs for the system.
-        - Pipes (top-level interfaces for the system)
-        - Pipelines (combinations of pipes)
-    Pipes do different processes, such as cleaning 
-    dataobjects(see packages.cleaning.data_object)
-    
-    Note: This file has a lot of repetition by design,
-    this is meant to be a very simple top-level access
-    point of the project.
+""" This file contains prefabs for different
+    'pipelines' relevant to this system.
 """
 
 
@@ -23,20 +16,23 @@ from packages.pipes.pipeline import Pipeline
 
 def get_pipeline_api_cln_simi_db(
         api_track:list = ["to", "and", "from"],
+        rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
     ):
-    """ Gets a pipeline consisting of;
+    """ Gets a pipeline instance consisting of
             - FeedFromAPIPipe
             - CleaningPipe
             - SimiPipe
             - DBPipe
-        The return is a function(closure) which
-        uses two threads:
-            1 - API.
-            2 - For processing pipes.
-        For more information, see;
-        packages.pipes.collection.*
+        The return is started with .run()
+
+        Params:
+            - api_track: What the Twitter API will track.
+            - rec_lvl: Recursion lvl for SimiPipe(v2w).
+            - threshold_output: Max data cap in each pipe.
+            - verbosity: Whether or not pipes are verbose.
+
     """
     api_pipe = FeedFromAPIPipe(
         track=api_track,
@@ -52,7 +48,7 @@ def get_pipeline_api_cln_simi_db(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=1 # @ make global
+            recursion_level=rec_lvl
     )
     db_pipe = DBPipe(
         previous_pipe=simi_pipe,
@@ -67,20 +63,22 @@ def get_pipeline_api_cln_simi_db(
 
 def get_pipeline_dsk_cln_simi_db(
         filepath:str,
+        rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
     ): # @ Not tested.
-    """ Gets a pipeline consisting of;
-            - FeedFromAPIPipe
+    """ Gets a pipeline instance consisting of
+            - FeedFromDiskPipe
             - CleaningPipe
             - SimiPipe
             - DBPipe
-        The return is a function(closure) which
-        uses two threads:
-            1 - API.
-            2 - For processing pipes.
-        For more information, see;
-        packages.pipes.collection.*
+        The return is started with .run()
+
+        Params:
+            - filepath: Path to input dataset.
+            - rec_lvl: Recursion lvl for SimiPipe(v2w).
+            - threshold_output: Max data cap in each pipe.
+            - verbosity: Whether or not pipes are verbose.
     """
     dsk_pipe = FeedFromDiskPipe(
             filepath=filepath,
@@ -96,7 +94,7 @@ def get_pipeline_dsk_cln_simi_db(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=1 # @ make global
+            recursion_level=rec_lvl
     )
     db_pipe = DBPipe(
         previous_pipe=simi_pipe,
@@ -112,9 +110,24 @@ def get_pipeline_dsk_cln_simi_db(
 def get_pipeline_dsk_cln_simi_js(
         filepath:str, 
         initial_query:list,
+        rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
     ):
+    """ Gets a pipeline instance consisting of
+            - FeedFromDiskPipe
+            - CleaningPipe
+            - SimiPipe
+            - PyJSBridgePipe
+        The return is started with .run()
+
+        Params:
+            - filepath: Path to input dataset.
+            - rec_lvl: Recursion lvl for SimiPipe(v2w).
+            - initial_query: Words tracked by system.
+            - threshold_output: Max data cap in each pipe.
+            - verbosity: Whether or not pipes are verbose.
+    """
     dsk_pipe = FeedFromDiskPipe(
             filepath=filepath,
             threshold_output=threshold_output, 
@@ -129,7 +142,7 @@ def get_pipeline_dsk_cln_simi_js(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=1
+            recursion_level=rec_lvl
     )
     bridge_pipe = PyJSBridgePipe(
         previous_pipe=simi_pipe,
@@ -145,10 +158,23 @@ def get_pipeline_dsk_cln_simi_js(
 def get_pipeline_api_cln_simi_js(
         api_track:list = ["to", "and", "from"], 
         initial_query:list = ["python"],
+        rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
     ):
+    """ Gets a pipeline instance consisting of
+            - FeedFromAPIPipe
+            - CleaningPipe
+            - SimiPipe
+            - PyJSBridgePipe
+        The return is started with .run()
 
+        Params:
+            - api_track: What the Twitter API will track.
+            - initial_query: Words tracked by system.
+            - threshold_output: Max data cap in each pipe.
+            - verbosity: Whether or not pipes are verbose.
+    """
     api_pipe = FeedFromAPIPipe(
         track=api_track,
         threshold_output=threshold_output,
@@ -163,7 +189,7 @@ def get_pipeline_api_cln_simi_js(
             previous_pipe=cln_pipe,
             threshold_output=threshold_output,
             verbosity=verbosity,
-            recursion_level=1 # @ make global
+            recursion_level=rec_lvl
     )
     bridge_pipe = PyJSBridgePipe(
         previous_pipe=simi_pipe,

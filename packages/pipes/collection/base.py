@@ -6,21 +6,18 @@ class PipeBase():
         certain 'pipes' which are used to construct
         the 'pipelines' for this project.
 
-        It includes input and output lists, which are 
-        explicetly not encapsulated such that probing
-        is easier (cost accepted).
+        Idea is to have pipes as interfaces for the 
+        'lower-level' functionality of this project.
+        For example: Data cleaning.
 
-        Thresholds(see init) are meant to indicate the
-        maximum size of input and output lists. If these
-        limits are exceeded, then one of two scenarios 
-        will occur:
-            1 - New data is dropped.
-            2 - New data is added, but oldes is dropped.
-        One of these two secarios will be determined by
-        self.refresh_data (2 if True).
+        Each time process() is called, data is pulled
+        from a previous pipe(property), if there is
+        one, process the data, and put it in the
+        output(property), which can be accessed 
+        by another pipe.
 
-        Processing this pipe must be called manually with
-        the method self.'process'.
+        Some pipe subclasses may take some control
+        of the process.
     """
 
     def __init__(self,
@@ -28,8 +25,17 @@ class PipeBase():
                 process_task, 
                 threshold_output:int, 
                 verbosity:bool) -> None:
-        """ Initialise with required properties. See
-            class docstring for more information.
+        """ 
+            Init with properties:
+                - previous_pipe: required but can be None.
+                - process_task: the function hooked to self.process()
+                    Must accept one value, return value will be appended
+                    to self.output.
+                - threshold_output: Max data count in self.output.
+                    If this is exceeded, then some of the data
+                    will be removed. Used to control memory usage.
+                - verbosity: whether or not print is done or not 
+                    (True might give _a_lot_ of information).
         """ 
 
         self.__process_task = process_task
@@ -49,18 +55,23 @@ class PipeBase():
         "Clears output if it reaches self.__threshold_output"
         while len(self.output) > self.__threshold_output:
             self.output.pop(0)
-            self.cond_print(
-                "Length of output list reached, removed oldest item."
-            )
+            self.cond_print( "Length of output list reached"
+                                ", removed oldest item.")
 
 
     def process(self):
-        """ Process this pipe with a method belonging to
-            a subclass 'self.__process_task'. This subclass
-            method can either:
-                1 - Take new data, process and return it.
-                    the processed data will go to self.output list.
-                2 - Return nothing and handle data itself.
+        """ This method is meant to be called through
+            subclasses. What it does:
+        
+            Process this pipe using a foreign method
+            specified as 'process_task' in self.init.
+        
+            Attemts to move data from:
+                self.previous_pipe.output
+            .. to self.output.
+
+            This method can be ignored if a subclass takes
+            responsebility of moving the data.
         """
         # // Attempt move data.
         next_data = None
@@ -70,6 +81,6 @@ class PipeBase():
         processed_data = self.__process_task(next_data)
         # // Optional pass; output can be controlled by subclass.
         if processed_data: self.output.append(processed_data)
-
+        # // Watch self.threshold_output.
         self.clear_overflow()
  

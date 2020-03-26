@@ -3,39 +3,48 @@ from packages.db.db_mana import DBMana
 
 class DBPipe(PipeBase):
 
-    """ This pipe assumes an input list which
-        gets dataobjects(packages.cleaning.data_object)
-        which are cleaned(packages.cleaning.basic_cleaner)
-        and have siminets attached(packages.similarity.process_tools).
+    """ 
+    This pipe is a subclass of PipeBase and
+    has two primary responsebilities:
+        - Move data to Neo4j DB, see point 1 below.
+        - Sort data in Neo4j DB, see point 2 below.
 
-        The action (baseclass.)process() works with self.__task like this:
-            - Move oldest item from input list and put it into
-              self.output. This is handled here.
-               
-            - Checks if new root_ring should be set (see docs), based
-                on self.new_root_ring.
-                - If that is the case wait until there are 3 objects
-                  in self.output. When that is the case, take all of them
-                  and create a new root ring in the db.
-            - Alternating task:
-                1 - Take a dataobj from output list and make the dbmanager
-                    (packages.db.db_mana) insert that into the db structure.
-                2 - Make the dbmanager sort the db structure 
-                    (chunked, with generator).
+    Clarification first:
+        - dataobj = packages.cleaning.data_object
+        - siminet = v2w tree structure created by
+            packages.pipes.collection.simi AND/OR
+            packages.similarity.process_tools.
+
+    1 : 
+        - Takes dataobj from self.previous_pipe
+            (dataobj must have a siminet).
+            - Either: caches it to create a new
+                DB ring (schema purpose), if required.
+                This caching is done until a minimum
+                ring size can be created.
+            - OR: uses the db_manager class to 
+                automatically insert the new node.
+    2 : 
+        calls db_manager to do sorting. This is done
+        with a generator, which makes it cheap.
+
+
+    Action done automatically by self.process()
     """
 
     def __init__(self, 
                 previous_pipe,
-                start_fresh,
+                start_fresh:bool,
                 threshold_output:int,
                 verbosity:bool = False) -> None:
         """ Initialises with required data; see docstring
-            of this- and base class for more info.
-
-            Note: start_fresh=True clears the db.
-            If this is set to False, and there is 
-            no root_ring, then an override will occur
-            which defaults to True.
+            of base class init for more info.
+            New param:
+                'start_fresh'=True clears the db
+                before making entries. If there
+                is no root ring in the db (schema),
+                then a new root ring will be created
+                anyway.
         """
         self.start_fresh = start_fresh
         self.setup()
@@ -59,7 +68,7 @@ class DBPipe(PipeBase):
         self.db_mana = DBMana()
         self.db_mana.setup_db_tools()
         self.db_mana.setup_simi_tools()  
-        # // Check if there is a root ring. If there are none;
+        # // Check if there is a root ring. If there is none;
         # // signal creation, even if it was prohibited by
         # // the init. Adding new nodes without root ring 
         # // will lead to a crash.
@@ -74,15 +83,15 @@ class DBPipe(PipeBase):
 
 
     def __task(self, item):
-        """ Alternates between db insertion and db sorting.
-            See class docstring for more information.
+        """ Does db insertion and db sorting.
+            Expects 'item' arg to be dataobj
+            with siminet (see class docstring)
         """
         if item:
             # // Drop objects with lack of siminet.
             if not item.siminet:
-                self.cond_print(
-                    "DB pipe found item with no siminet. Dropping."
-                )
+                self.cond_print( "DB pipe found item" 
+                                "with no siminet. Dropping.")
                 return None
             # // Taking control over output queue from base.
             self.output.append(item)

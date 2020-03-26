@@ -9,32 +9,46 @@ from credentials import pyjs_bridge_ip, pyjs_bridge_port
 
 class PyJSBridgePipe(PipeBase):
 
-    """ This class is responsible for sending floats over
-        localhost, which is meant to be taken from a JS
-        front-end.
+    """ This is a special class with one responsebility;
+        to send data to a front-end through WebSockets.
+        This involves a lengthy process, though.
 
-        IMPORTANT: This class is specialised:
-            It expects a dataobject(packages.cleaning.data_object)
-            from the input list, which is compared with a query.
-            It is assumed that these dataobjects have siminets
-            attached (packages.similarity.process_tools).
-            Input expected to come from the output of pipe:
-                packages.pipes.collection.simi
+        Parlance:
+            dataobj= An object which contains twitter data.
+                        packages.cleaning.data_object
+            siminet= A tree structure composed of related words.
+                        created at: packages.similarity.process_tools
+            simitool= Instance which creates siminets.
 
-            The query must be a list of strings(checked), which
-            will be converted to a siminet. This siminet
-            will be compared with the siminet of new objects
-            coming from the input list, to create a similarity
-            score(float) which goes into the output list.
+        Process:
+            - Create siminets from a list of strings (AKA query)
+                provided in self.init.
+            - Infrastructure for query update exists but is not used
+                at the data of writing. This infrastructure
+                accepts a new query in self.query_queued.
+                This list is used for staging and is eventually
+                processed and moved to self.query_ready.
 
-            Floats from the output list will be sent over
-            websockets to any front-end. This task will
-            be activated on connection.
+            - Take dataobjs from self.previous_pipe; those
+                dataobjects need to have siminets ..
+            - Then compare siminets those dataobjs against the
+                siminets of self.query_ready. This comparison
+                is done by the simi class. Result is a float
+            - Float is sent over WebSockets if a connection
+                is established.
 
-            The query can be updated at any time; that is 
-            automatically processed. This feature is currently
-            (060320) unused but will be useful if this class
-            is extended to take new queries from a front-end.
+        NOTE 1:
+            This class can autodetect a simitool in 
+            previous_pipe stack (all). It is assumed that
+            SimiPipe(packages.pipes.collection.simi) is
+            in the same pipeline as this class. If this is 
+            not true, and a simitool is not autodetected,
+            then it is created. On creation a w2v model 
+            is loaded, which can take some amount of time.
+        NOTE 2:
+            This class spawns a thread which uses asyncio
+            with WebSockets.
+
     """
 
     def __init__(self,
@@ -43,22 +57,13 @@ class PyJSBridgePipe(PipeBase):
                 threshold_output:int, 
                 verbosity:bool) -> None:
         """ Setting required values, and passing to super.
-            See docstring of this class and the base class
-            for more information.
+            See docstring of base class for more information.
 
-            NOTE 1: Simitool must be an instance of
-                packages.similarity.process_tools.ProcessSimilarity.
-                This is implemented this way because the simi tool
-                requires a loaded word2vec model, but it is assumed
-                that it is already loaded into the runtime (input list
-                should contain list of dataobjects with a simi net attached).
-                This is purely for optimisation purposes, as loading a
-                w2v model twice seems wasteful.
-
-            NOTE 2:
-                The main functionality (websockets) must be explicitly started
-                from the outside, by calling the 'start' method, which uses
-                asyncio.
+            New param:
+                'query'= This is used to create siminets which
+                are compared against the siminets in dataobjs 
+                pulled from self.previous_pipe. See class
+                docstring for more information.
         """
 
         super(PyJSBridgePipe, self).__init__(
@@ -72,7 +77,7 @@ class PyJSBridgePipe(PipeBase):
         self.query_ready = []   # // Transformed queries (siminets)
         self.set_simitool()
         self.foreign_data_queue = []
-        self.thread_active = False
+        self.thread_active = False # // Used to spawn thread exactly once.
 
 
     def set_simitool(self):
@@ -167,7 +172,15 @@ class PyJSBridgePipe(PipeBase):
 
 
     def __task(self, element):
-        "Redundant but required"
+        """ This method call does two things:
+                - Spawns one thread on first call,
+                    which activates WebSockets. 
+                - Moves 'element' param to 
+                    self.foreign_data_queue.
+                    'element' is expected to be
+                    a dataobj with a siminet.
+                    See class docstring for more info.
+        """
         if not self.thread_active:
             network_thread = threading.Thread(target=self.start)
             network_thread.start()

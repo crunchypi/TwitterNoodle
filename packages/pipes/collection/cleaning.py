@@ -5,26 +5,25 @@ from packages.cleaning.basic_cleaner import BasicCleaner
 class CleaningPipe(PipeBase):
 
     """ Cleaning pipe is a subclass of PipeBase and
-        is meant to take an input(list) of tweepy tweets.
-        On self.process(), these tweets will be converted
-        to dataobjects(packages.cleaning.data_object),
-        cleaned(packages.cleaning.basic_cleaner) and
-        appended to the output list.
+        is meant to:
+            1 - Take 'data'* from self.previous_pipe.
+                    (data = tweepy tweet objects)
+            2 - Covert it to dataobjects.
+                    (dataobjects = packages.cleaning.data_object)
+            3 - Perform NLP cleaning.
+            4 - Pass result to self.output
 
-        self.process() will do it with one item at a 
-        time.
+        Action done by self.process()
     """
 
     def __init__(self, 
                 previous_pipe,
                 threshold_output:int = 200,
                 verbosity:bool = False) -> None:
-
         """ Setting required values, and passing to super.
-            See docstring of this class and the base class
-            for more information.
+            See docstring of the baseclass init docstring
+            for parameter details.
         """
-
         super(CleaningPipe, self).__init__(
                 previous_pipe=previous_pipe,
                 process_task=self.__task, 

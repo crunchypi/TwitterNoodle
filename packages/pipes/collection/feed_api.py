@@ -6,10 +6,10 @@ class FeedFromAPIPipe(PipeBase):
 
     """ This particular class gets tweepy tweets from
         the API(credentials must be set). As such,
-        an input list is not required.
+        a previous_pipe is not required.
 
         Note: self.__task and process is redundant because
-            1 - There is not input list.
+            1 - There is not previous pipe.
             2 - Tweets go directly to output list.
 
             If this class is garbage collected, then
@@ -21,8 +21,12 @@ class FeedFromAPIPipe(PipeBase):
                 threshold_output:int, 
                 verbosity:bool) -> None:
         """ Setting required values, and passing to super.
-            See docstring of this class and the base class
-            for more information.
+            See docstring of baseclass for more information
+            about params.
+            New param:
+                'track'= what the Twitter API will send
+                back. If track=['cats'] then tweets
+                collected will likely be related to cats..
         """
         super(FeedFromAPIPipe, self).__init__(
                 previous_pipe=None,
