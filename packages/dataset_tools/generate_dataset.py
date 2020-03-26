@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 from packages.dataset_tools import common
-from packages.pipes.prefabs import get_pipe_feed_from_api
+from packages.pipes.collection.feed_api import FeedFromAPIPipe
 from packages.cleaning import custom_stopwords
 
 
@@ -102,11 +102,12 @@ class GenerateDataset():
             return
 
         # // Setup stream
-        queue_stream = []
-        feed_pipe = get_pipe_feed_from_api(
+        api_pipe = FeedFromAPIPipe(
             track=self.track_keywords,
-            output=queue_stream
+            threshold_output=200,
+            verbosity=False
         )
+        queue_stream = api_pipe.output
 
         # // Setup time, used for slicing sections of stream.
         time_current = int(time.mktime(datetime.now().timetuple()))
@@ -117,7 +118,6 @@ class GenerateDataset():
         # // Run
         while time_end > time_current or self.runtime_forever:
             time_current = int(time.mktime(datetime.now().timetuple()))
-            feed_pipe.process()
 
             # // Save on slice
             if time_current >= time_next_slice :
