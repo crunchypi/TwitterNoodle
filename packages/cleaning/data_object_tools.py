@@ -18,7 +18,7 @@ def convert_tweet2dataobj(tweet): # -> DataObj
     return new_obj
 
 
-def siminet_to_txt(siminet, row_sep:str = "--", col_sep:str = "||") -> str:
+def siminet_to_txt(siminet:list, row_sep:str = "--", col_sep:str = "||") -> str:
     """ Converts a similarity net (see packages.similarity.process_tools),
         which is a 2d list, into a string. This is useful formatting
         to do if a similarity net is to be put into a database (Neo4j,

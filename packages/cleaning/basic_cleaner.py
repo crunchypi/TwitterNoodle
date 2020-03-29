@@ -1,4 +1,4 @@
-
+a
 #from nltk.corpus import stopwords  # // AA(071119): deprecated
 import re
 import string
@@ -170,7 +170,7 @@ class BasicCleaner():
 
 
     @staticmethod
-    def set_sentiment(content:str, range:float) -> bool:
+    def set_sentiment(content:str, range:list) -> bool:
         """ Uses textblob to guauge if some content is
             within a sentiment range. 'range' must be
             in this form: [float(lower), float(upper)].
