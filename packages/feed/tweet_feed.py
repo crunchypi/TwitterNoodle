@@ -25,10 +25,11 @@ class Feed():
 
     def live_get_listener(self, queue_stream):
         " Sets up CustomStramListener returns it. "
-        listener = CSL(_destination = queue_stream,
-                                    _stream_toggle = True,
-                                        _warn_verbosity = True)
-        return listener
+        return CSL(
+            _destination = queue_stream,
+            _stream_toggle = True,
+            _warn_verbosity = True
+        )
 
     def live_get_streamer(self, listener, track):
         " Sets up tweepy.Stream and returns it. "
