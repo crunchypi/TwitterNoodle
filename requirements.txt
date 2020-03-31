@@ -6,8 +6,11 @@ python3 (module installs done with pip3)
 	tweepy
  	gensim
 	textblob
-	websockets 
+	websockets
 
+	matplotlib
+	pandas
+	wordcloud
 
 
 Extra:
