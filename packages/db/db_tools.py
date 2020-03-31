@@ -56,12 +56,12 @@ class GDBCom():
         self.cache_execute(_single_transaction = False)        
 
 
-    def cache_execute(self, _single_transaction:bool) -> None:
+    def cache_execute(self, _single_transaction:bool = False) -> None:
         """ Executes everything in the self.cache_commands,
             either in one single transaction, or one command
             snippet at a time.
 
-            NOTE: This method only supports _single_transaction=True
+            NOTE: This method only supports _single_transaction=False
                     -AA 050320
         """
         with self.graphDB_Driver.session() as GDBS:
