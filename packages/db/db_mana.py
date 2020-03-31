@@ -49,12 +49,14 @@ class DBMana():
         self.static_ringsize = static_ringsize
         self.conservative_swaps = True
 
-        self.dataobj_queue = []
-        self.dataobj_queue_overloaded = False
-        self.dataobj_queue_max_threshold_soft = 100
-        self.dataobj_queue_max_threshold_hard = 200
+        # // Deprecated 290320
+        # self.dataobj_queue = []
+        # self.dataobj_queue_overloaded = False
+        # self.dataobj_queue_max_threshold_soft = 100
+        # self.dataobj_queue_max_threshold_hard = 200
 
-        self.clockwork_current_node = None
+        # // Deprecated 290320
+        #self.clockwork_current_node = None
 
 
     def setup_db_tools(self, verbosity: bool = False) -> None:
