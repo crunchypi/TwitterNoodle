@@ -1,4 +1,3 @@
-a
 #from nltk.corpus import stopwords  # // AA(071119): deprecated
 import re
 import string
