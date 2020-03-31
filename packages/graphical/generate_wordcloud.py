@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 
 from packages.feed.tweet_feed import Feed
 from packages.cleaning.basic_cleaner import BasicCleaner
-from packages.cleaning import data_object
+from packages.cleaning.data_object_tools import convert_tweet2dataobj
 
 
 """ This module provides some tools for doing exploratory data analysis.
@@ -17,7 +17,7 @@ from packages.cleaning import data_object
 
 
 # // Here for convinience.
-file_path = "../datasplit/out/191120-21_34_19--191120-21_35_18" 
+file_path = "200326-18_00_01--200326-18_00_09" 
 # // Acts globally, used in get_long_tweet_objects.
 sentiment_range = [float(-1), float(1)]
 
@@ -29,7 +29,7 @@ def get_long_tweet_objects(path:str) -> list:
     """
     feed = Feed()
     queue_stream = feed.disk_get_tweet_queue(path)
-    data_objects = [data_object.get_dataobj_converted(tweet) for tweet in queue_stream]
+    data_objects = [convert_tweet2dataobj(tweet) for tweet in queue_stream]
     for obj in data_objects: BasicCleaner.autocleaner(obj,sentiment_range, False)
     return data_objects
 
@@ -39,16 +39,16 @@ def get_long_tweet_string(path):
         combine all their text fields into one single string,
         which is returned.
     """
-    long_string = [obj.text*(obj.valid_sentiment_range) 
+    return " ".join(
+            [obj.text*(obj.valid_sentiment_range) 
                     for obj in get_long_tweet_objects(path=path)]
-    return " ".join(long_string)
+        )
 
 
 def generate_wordcloud(path:str):
     """ Launch a rudimentary word cloud, using local 
         'get_long_tweet_string'.
     """
-
     word_cloud = WordCloud(
         width = 800, 
         height = 800, 
@@ -72,8 +72,12 @@ def write_csv(filename:str, dataobjects:list):
         is ignored (a warn printout will occur).
     """
     with open(filename, 'w', newline='') as csvfile:
-        obj_writer = csv.writer(csvfile, delimiter=',',
-                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
+        obj_writer = csv.writer(
+            csvfile, 
+            delimiter=',',
+            quotechar=' ', 
+            quoting=csv.QUOTE_MINIMAL
+        )
         # // Create header.
         obj_writer.writerow(
             ["name"] + 
