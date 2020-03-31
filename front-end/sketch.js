@@ -1,5 +1,5 @@
 let data = []; // # Data from network.
-let dataMultiplier = 10; // # Aplify values.
+let dataMultiplier = 2; // # Aplify values.
 let waveHistory = []; // # ColorPoint history.
 
 let lerpedLast = 0;
