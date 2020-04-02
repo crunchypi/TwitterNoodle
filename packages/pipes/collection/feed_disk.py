@@ -17,8 +17,8 @@ class FeedFromDiskPipe(PipeBase):
 
     def __init__(self,
                 filepath: str,
-                threshold_output:int,
-                verbosity:bool) -> None:
+                threshold_output:int = 200,
+                verbosity:bool=  False) -> None:
         """ Setting required values, and passing to super.
             See docstring of base class for more information.
             New param:

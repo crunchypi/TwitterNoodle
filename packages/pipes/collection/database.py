@@ -35,7 +35,7 @@ class DBPipe(PipeBase):
     def __init__(self, 
                 previous_pipe,
                 start_fresh:bool,
-                threshold_output:int,
+                threshold_output:int = 200,
                 verbosity:bool = False) -> None:
         """ Initialises with required data; see docstring
             of base class init for more info.

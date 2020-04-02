@@ -18,8 +18,8 @@ class FeedFromAPIPipe(PipeBase):
 
     def __init__(self,
                 track: list,
-                threshold_output:int, 
-                verbosity:bool) -> None:
+                threshold_output:int = 200, 
+                verbosity:bool = False) -> None:
         """ Setting required values, and passing to super.
             See docstring of baseclass for more information
             about params.
