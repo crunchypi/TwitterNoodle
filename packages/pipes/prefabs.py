@@ -15,7 +15,7 @@ from packages.pipes.pipeline import Pipeline
 
 
 def get_pipeline_api_cln_simi_db(
-        api_track:list = ["to", "and", "from"],
+        api_track:list = ["to", "and", "from", "but", "how", "why"],
         rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
@@ -66,7 +66,7 @@ def get_pipeline_dsk_cln_simi_db(
         rec_lvl:int = 1,
         threshold_output:int = 200,
         verbosity:bool = False
-    ): # @ Not tested.
+    ):
     """ Gets a pipeline instance consisting of
             - FeedFromDiskPipe
             - CleaningPipe
@@ -106,7 +106,7 @@ def get_pipeline_dsk_cln_simi_db(
         pipes=[dsk_pipe, cln_pipe, simi_pipe, db_pipe]
     )
 
-# @ not tested
+
 def get_pipeline_dsk_cln_simi_js(
         filepath:str, 
         initial_query:list,
@@ -156,7 +156,7 @@ def get_pipeline_dsk_cln_simi_js(
 
 
 def get_pipeline_api_cln_simi_js(
-        api_track:list = ["to", "and", "from"], 
+        api_track:list = ["to", "and", "from", "but", "how", "why"], 
         initial_query:list = ["python"],
         rec_lvl:int = 1,
         threshold_output:int = 200,
