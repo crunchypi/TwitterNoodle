@@ -1,0 +1,12 @@
+<META>
+Someone loves cats
+</META>
+
+<NAME>
+ilovecats
+</NAME>
+
+<TEXT>
+My cat is adorable!
+</TEXT>
+

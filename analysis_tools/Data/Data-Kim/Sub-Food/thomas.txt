@@ -1,0 +1,12 @@
+<META>
+food
+</META>
+
+<NAME>
+Thomas
+</NAME>
+
+<TEXT>
+foodcoma inc
+</TEXT>
+

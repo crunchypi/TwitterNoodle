@@ -1,0 +1,12 @@
+<META>
+icecream
+</META>
+
+<NAME>
+fasting
+</NAME>
+
+<TEXT>
+I'm eating icecream now
+</TEXT>
+

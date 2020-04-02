@@ -1,0 +1,11 @@
+<META>
+Conal likes hamburgers.
+</META>
+
+<NAME>
+Conal Ward
+</NAME>
+
+<TEXT>
+I like hamburgers. Yummy.
+</TEXT>

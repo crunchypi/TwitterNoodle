@@ -1,0 +1,11 @@
+<META>
+Huzaifah goes to the Louvre museum.
+</META>
+
+<NAME>
+Huzaifah Mcartur
+</NAME>
+
+<TEXT>
+Went to the Louvre Museum today. What a nice day.
+</TEXT>

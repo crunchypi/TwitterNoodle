@@ -1,0 +1,11 @@
+<META>
+Martha feeds the ducks.
+</META>
+
+<NAME>
+Martha Steward
+</NAME>
+
+<TEXT>
+Feeding the ducks this morning, in the park.
+</TEXT>

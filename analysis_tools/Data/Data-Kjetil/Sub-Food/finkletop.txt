@@ -1,0 +1,12 @@
+<META>
+Ate too much spaghetti
+</META>
+
+<NAME>
+finkletop
+</NAME>
+
+<TEXT>
+I ate too much spaghetti, now I have a stomach ache
+</TEXT>
+

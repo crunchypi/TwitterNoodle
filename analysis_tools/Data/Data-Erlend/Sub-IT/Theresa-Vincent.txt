@@ -1,0 +1,11 @@
+<META>
+Theresa doesn't understand windows.
+</META>
+
+<NAME>
+Theresa Vincent
+</NAME>
+
+<TEXT>
+I don't undertand how to use this windows.
+</TEXT>

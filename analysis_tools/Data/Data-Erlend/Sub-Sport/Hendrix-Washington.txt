@@ -1,0 +1,11 @@
+<META>
+Hendrix thinks sports is boring.
+</META>
+
+<NAME>
+Hendrix Washington
+</NAME>
+
+<TEXT>
+I think sports are boring. 
+</TEXT>

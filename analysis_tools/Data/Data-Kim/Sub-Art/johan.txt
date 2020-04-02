@@ -1,0 +1,12 @@
+<META>
+graphic art
+</META>
+
+<NAME>
+johan
+</NAME>
+
+<TEXT>
+i do graphic design.
+</TEXT>
+

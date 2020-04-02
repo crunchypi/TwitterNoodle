@@ -1,0 +1,11 @@
+<META>
+John goes fishing, catches fish.
+</META>
+
+<NAME>
+John Travolta
+</NAME>
+
+<TEXT>
+Went fishing toda, caught fish. Yay!
+</TEXT>

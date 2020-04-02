@@ -1,0 +1,12 @@
+<META>
+Someone went to the museum
+</META>
+
+<NAME>
+fanfart
+</NAME>
+
+<TEXT>
+Went to the museum the other day to look at art, it was very inspiring
+</TEXT>
+

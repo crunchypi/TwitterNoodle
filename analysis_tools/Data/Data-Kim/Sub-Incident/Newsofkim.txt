@@ -1,0 +1,12 @@
+<META>
+car bomb
+</META>
+
+<NAME>
+NewsofKim
+</NAME>
+
+<TEXT>
+Car bomb over Brooklyn last night.
+</TEXT>
+

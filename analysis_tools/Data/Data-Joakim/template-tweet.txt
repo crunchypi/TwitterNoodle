@@ -1,0 +1,14 @@
+<META>
+// Write some context, example:
+Han fyren snakker om noe interessant
+</META>
+
+<NAME>
+// Name of the person, example:
+The cucumber man
+</NAME>
+
+<TEXT>
+I really do enjoy cucumbers, but I prefer referendums
+</TEXT>
+

@@ -1,0 +1,12 @@
+<META>
+food
+</META>
+
+<NAME>
+June
+</NAME>
+
+<TEXT>
+I made the best dinner today
+</TEXT>
+

@@ -1,0 +1,11 @@
+<META>
+Arne eats juicy pancakes.
+</META>
+
+<NAME>
+Arnie Andrade
+</NAME>
+
+<TEXT>
+Look at these amazing juicy pankakes. Yummy.
+</TEXT>

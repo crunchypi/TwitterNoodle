@@ -1,0 +1,12 @@
+<META>
+Bomb a car
+</META>
+
+<NAME>
+Twitterelite
+</NAME>
+
+<TEXT>
+Today we blew up a car. 
+</TEXT>
+

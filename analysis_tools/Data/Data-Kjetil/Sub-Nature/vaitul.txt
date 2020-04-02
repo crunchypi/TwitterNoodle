@@ -1,0 +1,12 @@
+<META>
+A pet snake
+</META>
+
+<NAME>
+vaitul
+</NAME>
+
+<TEXT>
+I hava a pet snake. It's cute.
+</TEXT>
+

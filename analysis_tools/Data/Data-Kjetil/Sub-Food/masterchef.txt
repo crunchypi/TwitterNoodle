@@ -1,0 +1,12 @@
+<META>
+He's a good cook
+</META>
+
+<NAME>
+masterchef
+</NAME>
+
+<TEXT>
+I can cook like Gordon Ramsey
+</TEXT>
+

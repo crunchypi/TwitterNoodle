@@ -1,0 +1,11 @@
+<META>
+Idris bought some nice steak.
+</META>
+
+<NAME>
+Idris Keenan
+</NAME>
+
+<TEXT>
+Caught some juicy steak at the butcher today.
+</TEXT>

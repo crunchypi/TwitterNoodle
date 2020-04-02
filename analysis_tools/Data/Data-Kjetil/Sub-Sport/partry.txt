@@ -1,0 +1,12 @@
+<META>
+Vague tweet about sports
+</META>
+
+<NAME>
+partry
+</NAME>
+
+<TEXT>
+Can't believe we lost that game
+</TEXT>
+

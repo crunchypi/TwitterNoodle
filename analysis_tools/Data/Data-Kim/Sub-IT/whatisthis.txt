@@ -1,0 +1,12 @@
+<META>
+tech love
+</META>
+
+<NAME>
+whatisthis
+</NAME>
+
+<TEXT>
+when is release of next gen nvidia?
+</TEXT>
+

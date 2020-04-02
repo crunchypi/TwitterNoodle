@@ -1,0 +1,12 @@
+<META>
+it-support
+</META>
+
+<NAME>
+techgod
+</NAME>
+
+<TEXT>
+if you need help with IT, give me a call
+</TEXT>
+

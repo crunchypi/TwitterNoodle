@@ -1,0 +1,11 @@
+<META>
+Hadiya goes to a painting class.
+</META>
+
+<NAME>
+Hadiya Howell
+</NAME>
+
+<TEXT>
+Took a painting class. Very happy with my paintings.
+</TEXT>

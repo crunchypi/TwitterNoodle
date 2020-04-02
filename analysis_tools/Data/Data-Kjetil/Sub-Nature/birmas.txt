@@ -1,0 +1,12 @@
+<META>
+He taught hes parrot to sing
+</META>
+
+<NAME>
+birmas
+</NAME>
+
+<TEXT>
+I taught my parrot to sing
+</TEXT>
+

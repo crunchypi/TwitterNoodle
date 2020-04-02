@@ -1,0 +1,11 @@
+<META>
+Suleman is learning about programming.
+</META>
+
+<NAME>
+Suleman Nicholson
+</NAME>
+
+<TEXT>
+I am trying to learn about programming, taking online courses.
+</TEXT>

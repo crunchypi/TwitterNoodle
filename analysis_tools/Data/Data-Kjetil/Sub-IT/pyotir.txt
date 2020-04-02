@@ -1,0 +1,12 @@
+<META>
+Asking for help with connecting to the internet
+</META>
+
+<NAME>
+pyotir
+</NAME>
+
+<TEXT>
+I can't connect to the internet, help!
+</TEXT>
+

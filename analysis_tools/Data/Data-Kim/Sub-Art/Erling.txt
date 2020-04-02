@@ -1,0 +1,12 @@
+<META>
+Beautiful art
+</META>
+
+<NAME>
+Erling
+</NAME>
+
+<TEXT>
+visited an art exhibition today
+</TEXT>
+

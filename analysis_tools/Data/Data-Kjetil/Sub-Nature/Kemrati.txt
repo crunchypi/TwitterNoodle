@@ -1,0 +1,12 @@
+<META>
+rode a camel once
+</META>
+
+<NAME>
+Kemrati
+</NAME>
+
+<TEXT>
+I once rode a camle while in Egypt.
+</TEXT>
+

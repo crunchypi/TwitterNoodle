@@ -1,0 +1,11 @@
+<META>
+Hamaad won the soccer leage in his town.
+</META>
+
+<NAME>
+Hamaad Salter
+</NAME>
+
+<TEXT>
+Yay, we won the town's soccer leage! We good.
+</TEXT>

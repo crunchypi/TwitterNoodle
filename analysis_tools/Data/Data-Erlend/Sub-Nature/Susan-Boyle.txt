@@ -1,0 +1,11 @@
+<META>
+Susan adopts a dog, from a dog shelter.
+</META>
+
+<NAME>
+Susan Boyle
+</NAME>
+
+<TEXT>
+Adopted this cute pupper at the dog shelter.
+</TEXT>

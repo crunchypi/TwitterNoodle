@@ -1,0 +1,11 @@
+<META>
+Anais is preparing a sports event. Wants people to join.
+</META>
+
+<NAME>
+Anais Carillo
+</NAME>
+
+<TEXT>
+I am preparing a big sports event, come join!
+</TEXT>

@@ -1,0 +1,11 @@
+<META>
+Kain gets an error on his computer.
+</META>
+
+<NAME>
+Kain Lennon
+</NAME>
+
+<TEXT>
+I got a bluescreen with errorcode 1337, what do I do?
+</TEXT>

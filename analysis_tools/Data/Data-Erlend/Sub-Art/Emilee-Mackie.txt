@@ -1,0 +1,11 @@
+<META>
+Emilee is feeling artsy today.
+</META>
+
+<NAME>
+Emilee Mackie
+</NAME>
+
+<TEXT>
+Feeling artsy today. Such an art day.
+</TEXT>

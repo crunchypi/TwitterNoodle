@@ -1,0 +1,12 @@
+<META>
+He's hungry
+</META>
+
+<NAME>
+Axel
+</NAME>
+
+<TEXT>
+Man I haven't eaten in 2 days. I'm starting to get hungry.
+</TEXT>
+

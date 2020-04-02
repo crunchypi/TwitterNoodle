@@ -1,0 +1,12 @@
+<META>
+food tip
+</META>
+
+<NAME>
+tiredoffood
+</NAME>
+
+<TEXT>
+dinner tips?
+</TEXT>
+

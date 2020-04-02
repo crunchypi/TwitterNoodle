@@ -1,0 +1,12 @@
+<META>
+tweet about cats being better than dogs
+</META>
+
+<NAME>
+bamalam
+</NAME>
+
+<TEXT>
+I do prefer cats over dogs.
+</TEXT>
+

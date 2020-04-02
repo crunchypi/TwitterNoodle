@@ -1,0 +1,11 @@
+<META>
+pete walks his dog
+</META>
+
+<NAME>
+PETE RON
+</NAME>
+
+<TEXT>
+Walked my dog today, weather was nice.
+</TEXT>

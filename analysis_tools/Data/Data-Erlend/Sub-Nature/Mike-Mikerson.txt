@@ -1,0 +1,11 @@
+<META>
+Mike pets his kangaroo
+</META>
+
+<NAME>
+Mike Mikerson
+</NAME>
+
+<TEXT>
+Petting my kangaroo, nice.
+</TEXT>

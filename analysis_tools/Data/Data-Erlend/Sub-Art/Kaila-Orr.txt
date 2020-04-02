@@ -1,0 +1,11 @@
+<META>
+Kaila likes doing pottery.
+</META>
+
+<NAME>
+Kaila Orr
+</NAME>
+
+<TEXT>
+Pottery is such a nice way to do creative art.
+</TEXT>

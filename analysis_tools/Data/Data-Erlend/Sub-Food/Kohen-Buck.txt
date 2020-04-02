@@ -1,0 +1,11 @@
+<META>
+Kohen eats ice cream from across the street.
+</META>
+
+<NAME>
+Kohen Buck
+</NAME>
+
+<TEXT>
+The ice cream from across the street is good.
+</TEXT>

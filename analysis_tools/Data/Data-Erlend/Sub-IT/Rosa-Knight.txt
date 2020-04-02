@@ -1,0 +1,11 @@
+<META>
+Rosa installs a new anti virus software.
+</META>
+
+<NAME>
+Rosa Knight
+</NAME>
+
+<TEXT>
+Installe a new anti virus software, now I'm safe!
+</TEXT>

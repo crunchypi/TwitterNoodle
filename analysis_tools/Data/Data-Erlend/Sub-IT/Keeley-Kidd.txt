@@ -1,0 +1,11 @@
+<META>
+Keeley buys a new computer.
+</META>
+
+<NAME>
+Keeley Kidd
+</NAME>
+
+<TEXT>
+Bought a new computer, can't wait to start using it!
+</TEXT>

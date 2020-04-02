@@ -1,0 +1,12 @@
+<META>
+Where is a bomb?
+</META>
+
+<NAME>
+TheMechanic
+</NAME>
+
+<TEXT>
+I really do enjoy fixing cars, but what if there is a bomb in it?
+</TEXT>
+

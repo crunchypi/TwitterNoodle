@@ -1,0 +1,12 @@
+<META>
+Tweet about food
+</META>
+
+<NAME>
+applemix
+</NAME>
+
+<TEXT>
+The sushi at my local deli is to die of
+</TEXT>
+

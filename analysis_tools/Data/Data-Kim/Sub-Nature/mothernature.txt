@@ -1,0 +1,12 @@
+<META>
+nature
+</META>
+
+<NAME>
+mothernature
+</NAME>
+
+<TEXT>
+mothernature can be as beautiful as it can be ugly. 
+</TEXT>
+

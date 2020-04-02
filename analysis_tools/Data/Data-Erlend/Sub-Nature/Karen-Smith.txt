@@ -1,0 +1,11 @@
+<META>
+Karen tends to her garden.
+</META>
+
+<NAME>
+Karen Smith
+</NAME>
+
+<TEXT>
+Tended to my garden today, look how beautiful.
+</TEXT>

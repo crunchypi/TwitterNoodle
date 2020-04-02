@@ -1,0 +1,12 @@
+<META>
+american food
+</META>
+
+<NAME>
+foodytweet
+</NAME>
+
+<TEXT>
+Can anyone make me a sandwich
+</TEXT>
+

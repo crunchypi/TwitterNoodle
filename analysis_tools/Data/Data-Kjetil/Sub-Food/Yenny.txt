@@ -1,0 +1,12 @@
+<META>
+They want to upen a resturant soon
+</META>
+
+<NAME>
+Yenny
+</NAME>
+
+<TEXT>
+One day, I will open my own resturant
+</TEXT>
+
