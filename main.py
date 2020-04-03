@@ -17,6 +17,13 @@ def print_help():
                 '-track=word1,word2,wordN' specifies API track
                 '-path=./...' specifies file location of dataset
                 '-query=word1,word2,wordN' query for frontend. 
+
+            Examples:
+                -pipe=dsk2db -path=./...
+                -pipe=api2db -track=to,and,from
+                -pipe=dsk2js -path=./.. -query=help,me
+                -pipe=api2js -track=to,and,from -query=help,me
+
     """)
 
 
