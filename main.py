@@ -1,30 +1,155 @@
+import sys
 from packages.pipes import prefabs
-from packages.pipes.pipeline import Pipeline
-
-# This file is meant to be an example at
-# the time of writing. Uncomment blocks
-# for testing (max one at a time)
+#from packages.pipes.pipeline import Pipeline
 
 
-# prefabs.get_pipeline_api_cln_simi_db(
-#     api_track=["to", "and", "from", "but", "how"]
-# ).run()
+def print_help():
+    print("""
+        Arguments allowed:
+
+            pipes:
+                '-pipe=dsk2db (more)' sets up pipeline disk -> db
+                '-pipe=api2db (more)' sets up pipeline api -> db
+                '-pipe=dsk2js (more)' sets up pipeline disk -> js
+                '-pipe=api2js (more)' sets up pipeline api -> js
+
+            more:
+                '-track=word1,word2,wordN' specifies API track
+                '-path=./...' specifies file location of dataset
+                '-query=word1,word2,wordN' query for frontend. 
+    """)
 
 
-# prefabs.get_pipeline_dsk_cln_simi_db(
-#     filepath="200322-18_57_08--200322-18_57_08"
-# ).run()
+def cmd_pt1(cmd):
+    if "-pipe=dsk2db" in cmd:
+        start_dsk2db(cmd)
+
+    elif "-pipe=api2db" in cmd:
+        start_api2db(cmd)
+
+    elif "pipe=dsk2js" in cmd:
+        start_dsk2js(cmd)
+
+    elif "-pipe=api2js" in cmd:
+        start_api2js(cmd)
+    else:
+        print("command not found")
+        print_help()
 
 
-# prefabs.get_pipeline_dsk_cln_simi_js(
-#     filepath="200322-18_57_08--200322-18_57_08",
-#     initial_query=["corona", "virus", "death", "sick", "help"]
-# )
+
+def parse_from_to_ws(cmd, from_str):
+    cmd = cmd.split()
+
+    from_index = None
+    for i, item in enumerate(cmd):
+        if from_str in item:
+            from_index = i
+            
+
+    if from_index == None:
+        print(f"not found: {cmd}")
+        return None
+
+    return cmd[from_index].replace(from_str, '')
 
 
-prefabs.get_pipeline_api_cln_simi_js(
-    api_track=["to", "and", "from", "but", "how"],
-    initial_query=["corona", "virus", "death", "sick", "help"]
-).run()
 
-print("end")
+
+def cmd_pt2_track(cmd):
+    parsed = parse_from_to_ws(cmd, "-track=")
+    if parsed: return parsed.split(",")
+    else: return None
+
+def cmd_pt2_path(cmd):
+    return parse_from_to_ws(cmd, "-path=")
+
+
+def cmd_pt2_query(cmd):
+    parsed = parse_from_to_ws(cmd, "-query=")
+    if parsed: return parsed.split(",")
+    else: return None
+
+
+
+
+
+def start_dsk2db(cmd):
+    path = cmd_pt2_path(cmd)
+    if not path: 
+        print('command error')
+        print_help()
+        return
+
+    #print(f"Starting dsk2db with path: {path}")
+    print("Starting pipeline dsk->db.")
+    prefabs.get_pipeline_dsk_cln_simi_db(
+        filepath=path
+    ).run()
+
+
+def start_api2db(cmd):
+    track = cmd_pt2_track(cmd)
+    if not track: 
+        print('command error')
+        print_help()
+        return
+
+    #print(f"Starting api2db with track: {track}")
+    print("Starting pipeline api->db")
+    prefabs.get_pipeline_api_cln_simi_db(
+        api_track=track
+    ).run()
+
+
+
+
+def start_dsk2js(cmd):
+    path = cmd_pt2_path(cmd)
+    query = cmd_pt2_query(cmd)
+    if not path or not query: 
+        print('command error')
+        print_help()
+        return
+    #print(f"Starting dsk2js with path: {path} and query: {query}")
+    print("Starting pipeline dsk->js")
+    prefabs.get_pipeline_dsk_cln_simi_js(
+        filepath=path,
+        initial_query=query
+    )
+
+
+def start_api2js(cmd):
+    track = cmd_pt2_track(cmd)
+    query = cmd_pt2_query(cmd)
+    if not track or not query:
+        print('command error')
+        print_help()
+        return
+    #print(f"Starting api2js with track:{track} and query:{query}")
+    print("Starting pipeline api->js")
+    prefabs.get_pipeline_api_cln_simi_js(
+        api_track=track,
+        initial_query=query
+    ).run()
+
+
+
+
+def main():
+
+    args = sys.argv[1:]
+    cmd_pt1(' '.join(args))
+
+
+main()
+
+
+
+
+
+
+
+
+
+#print("end")
