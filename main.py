@@ -40,7 +40,7 @@ def print_help():
 
                 -getdataset -ttime=10 -stime=10 -track=virus -path=./
                 -scaledataset -sdiv=2 -sin=.. -sout=..
-                -scaledataset -sdiv=2 -sin=./200403-00_45_30--200403-00_45_38.zip -sout=./
+                -scaledataset -sdiv=2 -sin=./... -sout=./
 
     """)
 
