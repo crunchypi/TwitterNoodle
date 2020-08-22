@@ -16,7 +16,10 @@ This project aims to detect incidents on micro-social media (Only twitter is sup
 	matplotlib
 	pandas
 	wordcloud
-  
+
+# NOTE!
+Update the root/credentials.py file, this project works with TwitterAPI and Neo4j most of the time and as such, keys are required.
+
 ## CLI in main.py:
 The core interface is by using modular pipes to move and process the data. This CLI tool uses prefabs to make this easier. <br/>
 Note: On first use, most pipes (those including a processing pipe) will use time to download and load a word2vec model; this might take a few minutes.
@@ -41,3 +44,6 @@ Note: On first use, most pipes (those including a processing pipe) will use time
       
     Merge datasets in local storage (pickle)
        <implemented but not hooked to CLI>
+       
+## CLI in db_query.py:
+This simple tool has a CLI menu system for browsing incidents in Neo4j.
