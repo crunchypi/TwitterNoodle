@@ -2,13 +2,15 @@
 
 See the README folder for more extensive documentation. There should be a file called 'Documentation.pdf' - all functions and modules are described in the "All modules" section starting on page 10. Architecture overview (image) can be found on page 2.
 
+<br/>
+
 This project aims to detect incidents on micro-social media (Only twitter is supported) using a hierarchical storage and processing structure. The main functionality is storage in Neo4j and visualisation in a simple real-time front-end plot. Analysis can be found in root/Analysis.ipynb
 
 ## Requirements:
-  (Twitter API keys)
-  neo4j
+	(Twitter API keys)
+	neo4j
 	tweepy
- 	gensim
+	gensim
 	textblob
 	websockets
 	matplotlib
@@ -16,7 +18,7 @@ This project aims to detect incidents on micro-social media (Only twitter is sup
 	wordcloud
   
 ## CLI in main.py:
-The core interface is by using modular pipes to move and process the data. This CLI tool uses prefabs to make this easier.
+The core interface is by using modular pipes to move and process the data. This CLI tool uses prefabs to make this easier. <br/>
 Note: On first use, most pipes (those including a processing pipe) will use time to download and load a word2vec model; this might take a few minutes.
     
     Pipe tweets to local storage (pickle)
